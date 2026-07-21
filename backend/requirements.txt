@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+mysql-connector-python
+sqlalchemy
+argon2-cffi
+pyjwt
+cryptography
+pyotp
+qrcode[pil]
+slowapi
+python-dotenv
+python-multipart
