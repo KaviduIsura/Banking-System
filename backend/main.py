@@ -194,7 +194,7 @@ def register(req: RegisterRequest, request: Request):
         return {
             "message": "Registration successful",
             "account_number": account_number,
-            "welcome_balance": "£10,000.00"
+            "welcome_balance": "LKR10,000.00"
         }
     finally:
         cursor.close()
@@ -471,7 +471,7 @@ def get_balance(request: Request, auth: dict = Depends(require_auth)):
         return {
             "account_number": account["account_number"],
             "balance_cents": balance_cents,
-            "balance_display": f"£{balance_cents / 100:.2f}",
+            "balance_display": f"LKR{balance_cents / 100:.2f}",
             "kyc_status": account.get("kyc_status", "pending")
         }
     finally:
@@ -585,7 +585,7 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         signature = sign_transaction(tx_data)    # ECDSA (Control Point J)
         tag = compute_hmac(tx_data)              # HMAC-SHA256 (Control Point I)
 
-        # Fraud Rules Engine (Threshold: £5,000)
+        # Fraud Rules Engine (Threshold: LKR5,000)
         is_fraud_flagged = req.amount_cents > 500000
         tx_status = "pending_review" if is_fraud_flagged else "completed"
 
@@ -598,7 +598,7 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
 
         if is_fraud_flagged:
             conn.commit()
-            amount_display = f"£{req.amount_cents / 100:.2f}"
+            amount_display = f"LKR{req.amount_cents / 100:.2f}"
             _audit("FRAUD_FLAG", user_id, f"Transfer of {amount_display} flagged for admin review", ip)
             return {
                 "message": "Transfer flagged for security review. It will process once approved by an administrator.",
@@ -622,7 +622,7 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         
         conn.commit()
 
-        amount_display = f"£{req.amount_cents / 100:.2f}"
+        amount_display = f"LKR{req.amount_cents / 100:.2f}"
         _audit("TRANSFER", user_id, f"Sent {amount_display} to {req.to_account_number}", ip)
 
         # Get sender email for notification
@@ -679,7 +679,7 @@ def get_transactions(auth: dict = Depends(require_auth)):
         )
         rows = cursor.fetchall()
         for row in rows:
-            row["amount_display"] = f"£{row['amount_cents'] / 100:.2f}"
+            row["amount_display"] = f"LKR{row['amount_cents'] / 100:.2f}"
             row["created_at"] = str(row["created_at"])
             # Mark as credit or debit from user's perspective
             row["type"] = "debit" if row["from_account"] == account_id else "credit"

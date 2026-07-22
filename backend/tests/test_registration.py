@@ -21,4 +21,4 @@ def test_registration_no_welcome_balance():
     assert data["message"] == "Registration successful"
     
     # Assert the welcome balance has been zeroed out
-    assert data["welcome_balance"] == "£0.00"
+    assert data["welcome_balance"] == "LKR0.00"
