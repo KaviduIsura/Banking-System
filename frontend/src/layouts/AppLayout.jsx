@@ -1,14 +1,20 @@
 import React, { useEffect, useRef } from 'react';
-import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Admin Isolation: Admins cannot access customer routes
+  if (user.role === 'admin' && (location.pathname === '/dashboard' || location.pathname === '/transfer' || location.pathname === '/history')) {
+    return <Navigate to="/admin/audit-log" replace />;
   }
 
   const handleLogout = (e) => {
@@ -47,26 +53,28 @@ export default function AppLayout() {
         </div>
         
         <div className="sidebar-nav">
-          <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-            <span className="nav-icon">📊</span>
-            <span className="nav-label">Dashboard</span>
-          </NavLink>
-          
-          <NavLink to="/transfer" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-            <span className="nav-icon">💸</span>
-            <span className="nav-label">Transfer</span>
-          </NavLink>
-          
-          <NavLink to="/history" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-            <span className="nav-icon">📋</span>
-            <span className="nav-label">History</span>
-          </NavLink>
-          
-          {user.role === 'admin' && (
+          {user.role === 'admin' ? (
             <NavLink to="/admin/audit-log" className={({ isActive }) => isActive ? 'nav-item active admin-nav' : 'nav-item admin-nav'}>
               <span className="nav-icon">🛡️</span>
               <span className="nav-label">Audit Log</span>
             </NavLink>
+          ) : (
+            <>
+              <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                <span className="nav-icon">📊</span>
+                <span className="nav-label">Dashboard</span>
+              </NavLink>
+              
+              <NavLink to="/transfer" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                <span className="nav-icon">💸</span>
+                <span className="nav-label">Transfer</span>
+              </NavLink>
+              
+              <NavLink to="/history" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                <span className="nav-icon">📋</span>
+                <span className="nav-label">History</span>
+              </NavLink>
+            </>
           )}
         </div>
         

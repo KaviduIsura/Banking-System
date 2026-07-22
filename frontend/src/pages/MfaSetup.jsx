@@ -69,15 +69,24 @@ export default function MfaSetup() {
       </p>
       
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>Generating secure key...</div>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <div className="skeleton" style={{ width: '200px', height: '200px', margin: '0 auto 1.5rem' }}></div>
+          <p style={{ color: 'var(--ink-soft)' }}>Generating secure key...</p>
+        </div>
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', animation: 'fadeIn 0.4s ease-out' }}>
             {qrCode && (
               <img 
                 src={`data:image/png;base64,${qrCode}`} 
                 alt="MFA QR Code"
-                style={{ border: '4px solid white', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                style={{ 
+                  width: '200px', 
+                  height: '200px', 
+                  border: '4px solid white', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)' 
+                }}
               />
             )}
           </div>

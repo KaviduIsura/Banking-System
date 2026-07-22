@@ -6,6 +6,12 @@ import { toast } from 'react-hot-toast';
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [address, setAddress] = useState('');
   const [nationalId, setNationalId] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -14,15 +20,28 @@ export default function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast.error('Email and password are required');
+    if (!email || !password || !confirmPassword || !fullName || !dateOfBirth || !phoneNumber || !address) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
       return;
     }
 
     setLoading(true);
     try {
       // Backend returns { account_number, welcome_balance, user_id }
-      const res = await register(email, password, nationalId || undefined);
+      const res = await register(
+        email, 
+        password, 
+        nationalId || undefined, 
+        fullName, 
+        dateOfBirth, 
+        phoneNumber, 
+        address
+      );
       navigate('/mfa-setup', { 
         state: { 
           userId: res.data.user_id, 
@@ -67,18 +86,100 @@ export default function Register() {
         
         <div className="form-group">
           <label className="form-label" htmlFor="reg-password">Password</label>
-          <input
-            id="reg-password"
-            type="password"
-            className="form-input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            autoComplete="new-password"
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              id="reg-password"
+              type={showPassword ? "text" : "password"}
+              className="form-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--ink-soft)'
+              }}
+            >
+              {showPassword ? '👁️‍🗨️' : '👁️'}
+            </button>
+          </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', marginTop: '0.5rem' }}>
             Hint: Use an uppercase letter and a number
           </p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="reg-confirm-password">Confirm Password</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              id="reg-confirm-password"
+              type={showPassword ? "text" : "password"}
+              className="form-input"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="full-name">Full Name</label>
+            <input
+              id="full-name"
+              type="text"
+              className="form-input"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="John Doe"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="date-of-birth">Date of Birth</label>
+            <input
+              id="date-of-birth"
+              type="date"
+              className="form-input"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="phone-number">Phone Number</label>
+          <input
+            id="phone-number"
+            type="tel"
+            className="form-input"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="+44 7700 900077"
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="address">Home Address</label>
+          <textarea
+            id="address"
+            className="form-input"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="123 Financial District..."
+            rows={2}
+          />
         </div>
         
         <div className="form-group">

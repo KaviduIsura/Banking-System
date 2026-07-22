@@ -92,6 +92,10 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     national_id: str | None = None
+    full_name: str
+    date_of_birth: str  # YYYY-MM-DD
+    phone_number: str
+    address: str
 
     @field_validator('password')
     @classmethod
@@ -151,21 +155,32 @@ def register(req: RegisterRequest, request: Request):
 
         password_hash = hash_password(req.password)
 
-        # Insert user
+        # Insert user with profile details
         cursor.execute(
-            "INSERT INTO users (email, password_hash) VALUES (%s, %s)",
-            (req.email, password_hash)
+            """
+            INSERT INTO users (email, password_hash, full_name, date_of_birth, phone_number, address) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (req.email, password_hash, req.full_name, req.date_of_birth, req.phone_number, req.address)
         )
         conn.commit()
         user_id = cursor.lastrowid
 
-        # Create bank account
+        # Create bank account (balance_cents is removed from accounts table)
         account_number = _generate_account_number()
         national_id_enc = encrypt_field(req.national_id) if req.national_id else None
-        # Re-enabled welcome bonus for testing purposes (10,000 GBP = 1,000,000 cents)
         cursor.execute(
-            "INSERT INTO accounts (user_id, account_number, balance_cents, national_id_encrypted) VALUES (%s,%s,%s,%s)",
-            (user_id, account_number, 1000000, national_id_enc)
+            "INSERT INTO accounts (user_id, account_number, national_id_encrypted) VALUES (%s,%s,%s)",
+            (user_id, account_number, national_id_enc)
+        )
+        conn.commit()
+        account_id = cursor.lastrowid
+
+        # Re-enabled welcome bonus for testing purposes (10,000 GBP = 1,000,000 cents)
+        # Added via Double-Entry Ledger
+        cursor.execute(
+            "INSERT INTO ledger (account_id, credit_cents, debit_cents, description) VALUES (%s, %s, %s, %s)",
+            (account_id, 1000000, 0, "Welcome Bonus")
         )
         conn.commit()
 
@@ -427,19 +442,60 @@ def get_balance(request: Request, auth: dict = Depends(require_auth)):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
+        # Get account number and KYC status
         cursor.execute(
-            "SELECT account_number, balance_cents FROM accounts WHERE user_id=%s",
+            """
+            SELECT a.id, a.account_number, u.kyc_status 
+            FROM accounts a 
+            JOIN users u ON a.user_id = u.id 
+            WHERE a.user_id=%s
+            """,
             (user_id,)
         )
         account = cursor.fetchone()
         if not account:
             raise HTTPException(status_code=404, detail="Account not found")
 
+        # Calculate balance from ledger
+        cursor.execute(
+            "SELECT COALESCE(SUM(credit_cents), 0) - COALESCE(SUM(debit_cents), 0) as balance_cents FROM ledger WHERE account_id=%s",
+            (account["id"],)
+        )
+        ledger_result = cursor.fetchone()
+        balance_cents = int(ledger_result["balance_cents"]) if ledger_result else 0
+
         return {
             "account_number": account["account_number"],
-            "balance_cents": account["balance_cents"],
-            "balance_display": f"£{account['balance_cents'] / 100:.2f}"
+            "balance_cents": balance_cents,
+            "balance_display": f"£{balance_cents / 100:.2f}",
+            "kyc_status": account.get("kyc_status", "pending")
         }
+    finally:
+        cursor.close()
+        conn.close()
+
+# --- Profile ----------------------------------------------------------------
+
+@app.get("/user/profile")
+def get_user_profile(request: Request, auth: dict = Depends(require_auth)):
+    """Return the authenticated user's profile information."""
+    user_id = int(auth["sub"])
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT full_name, email, date_of_birth, phone_number, address, kyc_status, role FROM users WHERE id=%s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Convert date to string safely if present
+        if user.get("date_of_birth"):
+            user["date_of_birth"] = str(user["date_of_birth"])
+            
+        return user
     finally:
         cursor.close()
         conn.close()
@@ -465,14 +521,21 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        # Get sender's account
+        # Get sender's account and calculate balance from ledger
         cursor.execute(
-            "SELECT id, balance_cents FROM accounts WHERE user_id=%s",
+            "SELECT id FROM accounts WHERE user_id=%s",
             (user_id,)
         )
         from_account = cursor.fetchone()
         if not from_account:
             raise HTTPException(status_code=404, detail="Sender account not found")
+
+        cursor.execute(
+            "SELECT COALESCE(SUM(credit_cents), 0) - COALESCE(SUM(debit_cents), 0) as balance_cents FROM ledger WHERE account_id=%s",
+            (from_account["id"],)
+        )
+        ledger_result = cursor.fetchone()
+        from_balance = int(ledger_result["balance_cents"]) if ledger_result else 0
 
         # Get recipient's account
         cursor.execute(
@@ -486,17 +549,19 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         if from_account["id"] == to_account["id"]:
             raise HTTPException(status_code=400, detail="Cannot transfer to same account")
 
-        if from_account["balance_cents"] < req.amount_cents:
+        if from_balance < req.amount_cents:
             raise HTTPException(status_code=400, detail="Insufficient funds")
 
-        # Fetch user status and MFA secret for Step-up Auth
-        cursor.execute("SELECT mfa_secret_encrypted, is_frozen FROM users WHERE id=%s", (user_id,))
+        # Fetch user status, KYC, and MFA secret
+        cursor.execute("SELECT mfa_secret_encrypted, is_frozen, kyc_status FROM users WHERE id=%s", (user_id,))
         user = cursor.fetchone()
         
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         if user["is_frozen"]:
             raise HTTPException(status_code=423, detail="Account is frozen. Cannot transfer funds.")
+        if user.get("kyc_status") != "verified":
+            raise HTTPException(status_code=403, detail="Account pending KYC verification. Please upload ID.")
         if not user["mfa_secret_encrypted"]:
             raise HTTPException(status_code=400, detail="MFA not configured")
 
@@ -516,24 +581,41 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         signature = sign_transaction(tx_data)    # ECDSA (Control Point J)
         tag = compute_hmac(tx_data)              # HMAC-SHA256 (Control Point I)
 
-        # Atomic balance update
-        cursor.execute(
-            "UPDATE accounts SET balance_cents = balance_cents - %s WHERE id=%s AND balance_cents >= %s",
-            (req.amount_cents, from_account["id"], req.amount_cents)
-        )
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=400, detail="Insufficient funds (concurrent update)")
+        # Fraud Rules Engine (Threshold: £5,000)
+        is_fraud_flagged = req.amount_cents > 500000
+        tx_status = "pending_review" if is_fraud_flagged else "completed"
 
+        # Record transaction (Double-entry principle step 1)
         cursor.execute(
-            "UPDATE accounts SET balance_cents = balance_cents + %s WHERE id=%s",
-            (req.amount_cents, to_account["id"])
+            "INSERT INTO transactions (from_account, to_account, amount_cents, signature, hmac_tag, status) VALUES (%s,%s,%s,%s,%s,%s)",
+            (from_account["id"], to_account["id"], req.amount_cents, signature, tag, tx_status)
         )
+        tx_id = cursor.lastrowid
 
-        # Record transaction
+        if is_fraud_flagged:
+            conn.commit()
+            amount_display = f"£{req.amount_cents / 100:.2f}"
+            _audit("FRAUD_FLAG", user_id, f"Transfer of {amount_display} flagged for admin review", ip)
+            return {
+                "message": "Transfer flagged for security review. It will process once approved by an administrator.",
+                "amount": amount_display,
+                "status": "pending_review",
+                "to_account": req.to_account_number
+            }
+
+        # Double-entry ledger update (only if not flagged)
+        # 1. Debit sender
         cursor.execute(
-            "INSERT INTO transactions (from_account, to_account, amount_cents, signature, hmac_tag) VALUES (%s,%s,%s,%s,%s)",
-            (from_account["id"], to_account["id"], req.amount_cents, signature, tag)
+            "INSERT INTO ledger (transaction_id, account_id, credit_cents, debit_cents, description) VALUES (%s, %s, %s, %s, %s)",
+            (tx_id, from_account["id"], 0, req.amount_cents, f"Transfer to {req.to_account_number}")
         )
+        
+        # 2. Credit receiver
+        cursor.execute(
+            "INSERT INTO ledger (transaction_id, account_id, credit_cents, debit_cents, description) VALUES (%s, %s, %s, %s, %s)",
+            (tx_id, to_account["id"], req.amount_cents, 0, f"Transfer from user {user_id}")
+        )
+        
         conn.commit()
 
         amount_display = f"£{req.amount_cents / 100:.2f}"
@@ -716,6 +798,91 @@ def dev_setup_mfa(req: DevSetupMfaRequest):
             "secret_plaintext": secret,  # for manual entry in authenticator app
             "next_step": "Scan QR or enter secret in Google Authenticator, then POST /mfa/confirm with user_id + 6-digit code"
         }
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Enterprise Endpoints (KYC & Fraud Engine)
+# ---------------------------------------------------------------------------
+
+@app.post("/user/verify-kyc")
+def verify_kyc(request: Request, auth: dict = Depends(require_auth)):
+    """Simulates automated ID verification (Onfido/Jumio)"""
+    user_id = int(auth["sub"])
+    ip = request.client.host if request.client else ""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET kyc_status='verified' WHERE id=%s", (user_id,))
+        conn.commit()
+        _audit("KYC_VERIFIED", user_id, "User ID verification successful", ip)
+        return {"message": "Identity verified successfully. You can now transfer funds."}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.get("/admin/transactions/pending")
+def admin_get_pending_tx(request: Request, auth: dict = Depends(require_admin)):
+    """Admin fetches all pending fraud transactions."""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM transactions WHERE status='pending_review' ORDER BY created_at DESC")
+        transactions = cursor.fetchall()
+        return {"pending_transactions": transactions}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.post("/admin/transactions/{tx_id}/approve")
+def admin_approve_tx(tx_id: int, request: Request, auth: dict = Depends(require_admin)):
+    """Admin approves a transaction flagged for fraud."""
+    admin_id = int(auth["sub"])
+    ip = request.client.host if request.client else ""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM transactions WHERE id=%s AND status='pending_review'", (tx_id,))
+        tx = cursor.fetchone()
+        if not tx:
+            raise HTTPException(status_code=404, detail="Transaction not found or not pending.")
+
+        # Insert double-entry ledger records
+        cursor.execute(
+            "INSERT INTO ledger (transaction_id, account_id, credit_cents, debit_cents, description) VALUES (%s, %s, %s, %s, %s)",
+            (tx["id"], tx["from_account"], 0, tx["amount_cents"], f"Transfer to account {tx['to_account']}")
+        )
+        cursor.execute(
+            "INSERT INTO ledger (transaction_id, account_id, credit_cents, debit_cents, description) VALUES (%s, %s, %s, %s, %s)",
+            (tx["id"], tx["to_account"], tx["amount_cents"], 0, f"Transfer from account {tx['from_account']}")
+        )
+        
+        # Update status
+        cursor.execute("UPDATE transactions SET status='completed' WHERE id=%s", (tx_id,))
+        conn.commit()
+
+        _audit("FRAUD_APPROVE", admin_id, f"Approved flagged transaction {tx_id}", ip)
+        return {"message": "Transaction approved and funds settled."}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.post("/admin/transactions/{tx_id}/reject")
+def admin_reject_tx(tx_id: int, request: Request, auth: dict = Depends(require_admin)):
+    """Admin rejects a flagged transaction."""
+    admin_id = int(auth["sub"])
+    ip = request.client.host if request.client else ""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE transactions SET status='rejected' WHERE id=%s AND status='pending_review'", (tx_id,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Transaction not found or not pending.")
+        conn.commit()
+        _audit("FRAUD_REJECT", admin_id, f"Rejected flagged transaction {tx_id}", ip)
+        return {"message": "Transaction rejected."}
     finally:
         cursor.close()
         conn.close()

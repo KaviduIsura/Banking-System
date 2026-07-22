@@ -35,8 +35,16 @@ api.interceptors.response.use(
 );
 
 // Auth
-export const register = (email, password, nationalId) =>
-  api.post('/register', { email, password, national_id: nationalId });
+export const register = (email, password, nationalId, fullName, dateOfBirth, phoneNumber, address) =>
+  api.post('/register', { 
+    email, 
+    password, 
+    national_id: nationalId,
+    full_name: fullName,
+    date_of_birth: dateOfBirth,
+    phone_number: phoneNumber,
+    address: address
+  });
 
 export const login = (email, password) =>
   api.post('/login', { email, password });
@@ -60,6 +68,9 @@ export const getBalance = () =>
 export const getTransactions = () =>
   api.get('/transactions');
 
+export const getProfile = () =>
+  api.get('/user/profile');
+
 export const transfer = (toAccountNumber, amountCents, mfaCode, note) =>
   api.post('/transfer', { to_account_number: toAccountNumber, amount_cents: amountCents, mfa_code: mfaCode, note });
 
@@ -68,5 +79,17 @@ export const getAuditLog = () =>
 
 export const freezeAccount = () =>
   api.post('/freeze-account');
+
+export const verifyKyc = () =>
+  api.post('/user/verify-kyc');
+
+export const getPendingTransactions = () =>
+  api.get('/admin/transactions/pending');
+
+export const approveTransaction = (txId) =>
+  api.post(`/admin/transactions/${txId}/approve`);
+
+export const rejectTransaction = (txId) =>
+  api.post(`/admin/transactions/${txId}/reject`);
 
 export default api;

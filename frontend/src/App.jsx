@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import Transfer from './pages/Transfer';
 import History from './pages/History';
 import AdminAuditLog from './pages/AdminAuditLog';
+import Verification from './pages/Verification';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/transfer" element={<Transfer />} />
             <Route path="/history" element={<History />} />
+            <Route path="/verification" element={<Verification />} />
             <Route path="/admin/audit-log" element={<AdminAuditLog />} />
           </Route>
           

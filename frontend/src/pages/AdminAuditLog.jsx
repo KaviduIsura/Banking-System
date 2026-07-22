@@ -1,29 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { getAuditLog } from '../api';
+import { getAuditLog, getPendingTransactions, approveTransaction, rejectTransaction } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function AdminAuditLog() {
   const { user } = useAuth();
   const [logs, setLogs] = useState([]);
+  const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('audit');
 
   if (user?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchData = async () => {
       try {
-        const res = await getAuditLog();
-        setLogs(res.data.audit_log || []);
+        const [auditRes, pendingRes] = await Promise.all([
+          getAuditLog(),
+          getPendingTransactions()
+        ]);
+        setLogs(auditRes.data.audit_log || []);
+        setPending(pendingRes.data.pending_transactions || []);
       } catch (err) {
-        console.error('Failed to fetch audit log:', err);
+        console.error('Failed to fetch admin data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchLogs();
+    fetchData();
   }, []);
 
   const formatDate = (dateStr) => {
@@ -61,9 +68,45 @@ export default function AdminAuditLog() {
     return 'var(--gold-soft)';
   };
 
+  const handleApprove = async (txId) => {
+    try {
+      await approveTransaction(txId);
+      toast.success('Transaction approved and funds settled.');
+      setPending(pending.filter(tx => tx.id !== txId));
+    } catch (err) {
+      toast.error('Failed to approve transaction.');
+    }
+  };
+
+  const handleReject = async (txId) => {
+    try {
+      await rejectTransaction(txId);
+      toast.success('Transaction rejected.');
+      setPending(pending.filter(tx => tx.id !== txId));
+    } catch (err) {
+      toast.error('Failed to reject transaction.');
+    }
+  };
+
   return (
-    <div>
-      <h2 style={{ marginBottom: '1rem' }}>Audit Log</h2>
+    <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ margin: 0 }}>Admin Dashboard</h2>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button 
+            className={`btn ${activeTab === 'audit' ? 'btn-primary' : 'btn-ghost'}`} 
+            onClick={() => setActiveTab('audit')}
+          >
+            Audit Log
+          </button>
+          <button 
+            className={`btn ${activeTab === 'pending' ? 'btn-primary' : 'btn-ghost'}`} 
+            onClick={() => setActiveTab('pending')}
+          >
+            Pending Transfers {pending.length > 0 && <span style={{ background: 'var(--danger)', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '50%', fontSize: '0.75rem', marginLeft: '0.5rem' }}>{pending.length}</span>}
+          </button>
+        </div>
+      </div>
       
       <div className="alert alert-info" style={{ backgroundColor: 'var(--ink)', color: 'var(--gold-soft)', border: 'none', marginBottom: '2rem' }}>
         <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>🛡️</span>
@@ -87,56 +130,102 @@ export default function AdminAuditLog() {
         ))}
       </div>
       
-      {/* Table */}
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ backgroundColor: 'var(--sand)' }}>
-            <tr>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Time</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Event</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>User ID</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>IP Address</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>Loading records...</td></tr>
-            ) : logs.length === 0 ? (
-              <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>No audit logs found.</td></tr>
-            ) : (
-              logs.map((log, i) => (
-                <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? '1px solid var(--gold-line)' : 'none' }}>
-                  <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                    {formatDate(log.created_at)}
-                  </td>
-                  <td style={{ padding: '1rem 1.5rem' }}>
-                    <span style={{
-                      backgroundColor: getEventBg(log.event_type),
-                      color: getEventColor(log.event_type),
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      fontWeight: 800,
-                    }}>
-                      {log.event_type}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
-                    {log.user_id || 'SYSTEM'}
-                  </td>
-                  <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
-                    {log.ip_address}
-                  </td>
-                  <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem' }}>
-                    {log.details}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Content based on tab */}
+      {activeTab === 'audit' ? (
+        <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead style={{ backgroundColor: 'var(--sand)' }}>
+              <tr>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Time</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Event</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>User ID</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>IP Address</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>Loading records...</td></tr>
+              ) : logs.length === 0 ? (
+                <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>No audit logs found.</td></tr>
+              ) : (
+                logs.map((log, i) => (
+                  <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? '1px solid var(--gold-line)' : 'none' }}>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {formatDate(log.created_at)}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem' }}>
+                      <span style={{
+                        backgroundColor: getEventBg(log.event_type),
+                        color: getEventColor(log.event_type),
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                      }}>
+                        {log.event_type}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                      {log.user_id || 'SYSTEM'}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
+                      {log.ip_address}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem' }}>
+                      {log.details}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead style={{ backgroundColor: 'var(--sand)' }}>
+              <tr>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Time</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>From Account</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>To Account</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Amount</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>Loading records...</td></tr>
+              ) : pending.length === 0 ? (
+                <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>No pending transactions found.</td></tr>
+              ) : (
+                pending.map((tx, i) => (
+                  <tr key={tx.id} style={{ borderBottom: i < pending.length - 1 ? '1px solid var(--gold-line)' : 'none' }}>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {formatDate(tx.created_at)}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                      ID: {tx.from_account}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                      ID: {tx.to_account}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem', color: 'var(--danger)', fontWeight: 'bold' }}>
+                      £{(tx.amount_cents / 100).toFixed(2)}
+                    </td>
+                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => handleApprove(tx.id)}>Approve</button>
+                        <button className="btn btn-ghost" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger-tint)' }} onClick={() => handleReject(tx.id)}>Reject</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

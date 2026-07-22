@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getBalance, getTransactions, freezeAccount } from '../api';
+import { getBalance, getTransactions, freezeAccount, getProfile } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -8,6 +8,8 @@ export default function Dashboard() {
   const [balance, setBalance] = useState(null);
   const [accountNumber, setAccountNumber] = useState('');
   const [transactions, setTransactions] = useState([]);
+  const [kycStatus, setKycStatus] = useState('pending');
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -27,9 +29,15 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [balRes, txRes] = await Promise.all([getBalance(), getTransactions()]);
+        const [balRes, txRes, profRes] = await Promise.all([
+          getBalance(), 
+          getTransactions(),
+          getProfile()
+        ]);
         setBalance(balRes.data.balance_cents);
         setAccountNumber(balRes.data.account_number);
+        setKycStatus(balRes.data.kyc_status);
+        setProfile(profRes.data);
         setTransactions(txRes.data.transactions.slice(0, 5)); // only last 5
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
@@ -64,9 +72,33 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
+    <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
       <h2 style={{ marginBottom: '2rem' }}>Welcome back</h2>
       
+      {kycStatus !== 'verified' && (
+        <div className="card" style={{ 
+          backgroundColor: 'var(--gold-mute)', 
+          border: '1px solid var(--gold)', 
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          animation: 'pulse 3s infinite'
+        }}>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>⚠️</span> Verification Required
+            </h3>
+            <p style={{ margin: '0.5rem 0 0 0', color: 'var(--ink)' }}>
+              You must verify your identity before you can send money.
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={() => navigate('/verification')}>
+            Verify Now
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         
         {/* Hero Card */}
@@ -100,30 +132,31 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Security Check-up Card */}
+        {/* Profile Card */}
         <div className="card">
           <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--gold)' }}>🛡️</span> Security Check-up
+            <span style={{ color: 'var(--gold)' }}>👤</span> Account Details
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--sand)', borderRadius: '8px' }}>
-              <div>
-                <p style={{ fontWeight: 700 }}>Two-Factor Auth</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>Protects your account</p>
-              </div>
-              <span style={{ backgroundColor: 'var(--success-tint)', color: 'var(--success)', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>
-                ENABLED
-              </span>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Full Name</span>
+              <span style={{ fontWeight: 600 }}>{profile?.full_name || 'N/A'}</span>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--sand)', borderRadius: '8px' }}>
-              <div>
-                <p style={{ fontWeight: 700 }}>Recent Logins</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>No suspicious activity</p>
-              </div>
-              <span style={{ backgroundColor: 'var(--success-tint)', color: 'var(--success)', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>
-                VERIFIED
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Date of Birth</span>
+              <span style={{ fontWeight: 600 }}>{profile?.date_of_birth || 'N/A'}</span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Phone</span>
+              <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{profile?.phone_number || 'N/A'}</span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Address</span>
+              <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '150px' }}>{profile?.address || 'N/A'}</span>
             </div>
             
             <button 
