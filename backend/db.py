@@ -10,9 +10,13 @@ pool = pooling.MySQLConnectionPool(
     pool_name="securebank_main",
     pool_size=5,
     host=os.getenv("DB_HOST", "localhost"),
+    port=int(os.getenv("DB_PORT", 3306)),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     database=os.getenv("DB_NAME", "securebank"),
+    ssl_verify_cert=True,
+    ssl_verify_identity=True,
+    ssl_ca=os.getenv("DB_SSL_CA", "/etc/ssl/cert.pem"),
     autocommit=False
 )
 
