@@ -10,3 +10,4 @@ qrcode[pil]
 slowapi
 python-dotenv
 python-multipart
+email-validator
