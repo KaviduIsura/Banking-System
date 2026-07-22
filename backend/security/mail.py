@@ -39,3 +39,28 @@ def send_transfer_confirmation(to_email: str, amount: str, to_account: str):
         # Email is best-effort. We log the failure but do not raise it,
         # ensuring the database transaction is not rolled back.
         logger.error(f"Failed to send transfer confirmation email: {e}")
+
+def send_security_alert(to_email: str, ip_address: str):
+    """Sends an alert when a login from a new IP is detected."""
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = os.getenv("SMTP_PORT", "465")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+
+    if not all([smtp_host, smtp_user, smtp_pass]):
+        logger.warning("SMTP credentials not configured. Skipping security alert email.")
+        return
+
+    msg = EmailMessage()
+    msg.set_content(f"Security Alert: A new login was detected from IP address {ip_address}. If this was not you, please freeze your account immediately.")
+    msg['Subject'] = 'Security Alert: New Login Detected'
+    msg['From'] = smtp_user
+    msg['To'] = to_email
+
+    try:
+        with smtplib.SMTP_SSL(smtp_host, int(smtp_port)) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            logger.info(f"Security alert email sent to {to_email}")
+    except Exception as e:
+        logger.error(f"Failed to send security alert email: {e}")

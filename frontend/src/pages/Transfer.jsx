@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getBalance, transfer } from '../api';
-
+import { toast } from 'react-hot-toast';
 export default function Transfer() {
   const [balance, setBalance] = useState(null);
   const [accountNumber, setAccountNumber] = useState('');
@@ -9,10 +9,10 @@ export default function Transfer() {
   const [toAccount, setToAccount] = useState('');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
   
   const [step, setStep] = useState(1); // 1 = form, 2 = confirm, 3 = success
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [successData, setSuccessData] = useState(null);
 
   useEffect(() => {
@@ -30,29 +30,29 @@ export default function Transfer() {
 
   const handleReview = (e) => {
     e.preventDefault();
-    setError('');
-    if (!toAccount) return setError('Recipient account is required');
-    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return setError('Enter a valid amount');
+    if (!toAccount) return toast.error('Recipient account is required');
+    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return toast.error('Enter a valid amount');
     
     const amountCents = Math.round(parseFloat(amount) * 100);
     if (balance !== null && amountCents > balance) {
-      return setError('Insufficient funds');
+      return toast.error('Insufficient funds');
     }
     
     setStep(2);
   };
 
   const handleConfirm = async () => {
+    if (!mfaCode || mfaCode.length !== 6) return toast.error('Enter a 6-digit MFA code');
     setLoading(true);
-    setError('');
     
     try {
       const amountCents = Math.round(parseFloat(amount) * 100);
-      const res = await transfer(toAccount.trim(), amountCents);
+      const res = await transfer(toAccount.trim(), amountCents, mfaCode, note);
       setSuccessData(res.data);
+      toast.success('Transfer successful!');
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Transfer failed');
+      toast.error(err.response?.data?.detail || 'Transfer failed');
       setStep(1); // Back to form on error
     } finally {
       setLoading(false);
@@ -72,8 +72,6 @@ export default function Transfer() {
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       <h2 style={{ marginBottom: '2rem' }}>Send Money</h2>
-      
-      {error && <div className="alert alert-error">{error}</div>}
       
       <div className="card">
         {step === 1 && (
@@ -179,6 +177,22 @@ export default function Transfer() {
                   <span>{note}</span>
                 </div>
               )}
+            </div>
+            
+            <div className="form-group" style={{ marginBottom: '2rem' }}>
+              <label className="form-label">Authenticator Code</label>
+              <input
+                type="text"
+                className="form-input mono"
+                value={mfaCode}
+                onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                maxLength="6"
+                style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.25rem' }}
+              />
+              <p style={{ fontSize: '0.875rem', color: 'var(--ink-soft)', marginTop: '0.5rem', textAlign: 'center' }}>
+                Enter the 6-digit code from your authenticator app to authorize this transaction.
+              </p>
             </div>
             
             <div style={{ display: 'flex', gap: '1rem' }}>

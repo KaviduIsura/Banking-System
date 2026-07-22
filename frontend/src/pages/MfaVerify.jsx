@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, Link, Navigate } from 'react-router-dom';
 import { verifyMfa } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function MfaVerify() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -20,19 +20,19 @@ export default function MfaVerify() {
   const handleVerify = async (e) => {
     e.preventDefault();
     if (code.length !== 6) {
-      setError('Please enter a 6-digit code');
+      toast.error('Please enter a 6-digit code');
       return;
     }
 
     setLoading(true);
-    setError('');
     
     try {
       const res = await verifyMfa(state.userId, code);
       login(res.data.access_token);
+      toast.success('Login successful!');
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'That code didn\'t match. Check your app and try again.');
+      toast.error(err.response?.data?.detail || "That code didn't match. Check your app and try again.");
     } finally {
       setLoading(false);
     }
@@ -45,15 +45,13 @@ export default function MfaVerify() {
         Signing in as {state.email}. <Link to="/login" style={{ fontWeight: 500 }}>Not you?</Link>
       </p>
       
-      {error && <div className="alert alert-error">{error}</div>}
-      
       <form onSubmit={handleVerify}>
         <div className="form-group">
           <input
             type="text"
             className="form-input mono"
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\\D/g, '').slice(0, 6))}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="000000"
             maxLength={6}
             inputMode="numeric"

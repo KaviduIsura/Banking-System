@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../api';
+import { toast } from 'react-hot-toast';
 
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nationalId, setNationalId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
     
     if (!email || !password) {
-      setError('Email and password are required');
+      toast.error('Email and password are required');
       return;
     }
 
@@ -34,9 +33,14 @@ export default function Register() {
       });
     } catch (err) {
       if (err.message === 'Network Error') {
-        setError('Network Error: Please open https://localhost:8443 in a new tab and accept the self-signed certificate.');
+        toast.error('Network Error: Please open https://localhost:8443 in a new tab and accept the self-signed certificate.');
       } else {
-        setError(err.response?.data?.detail || 'Registration failed.');
+        const detail = err.response?.data?.detail;
+        if (Array.isArray(detail)) {
+          toast.error(detail[0].msg);
+        } else {
+          toast.error(detail || 'Registration failed.');
+        }
       }
     } finally {
       setLoading(false);
@@ -46,8 +50,6 @@ export default function Register() {
   return (
     <div>
       <h3 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Create an Account</h3>
-      
-      {error && <div className="alert alert-error">{error}</div>}
       
       <form onSubmit={handleRegister}>
         <div className="form-group">

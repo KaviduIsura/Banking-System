@@ -17,7 +17,8 @@ import string
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.ids_monitor import IDSMonitorMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
+import re
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -26,7 +27,7 @@ from db import get_connection
 from security.password import hash_password, verify_password
 from security.jwt_auth import issue_jwt, require_auth, require_admin
 from security.mfa import generate_mfa_secret, get_qr_code_base64, verify_totp
-from security.mail import send_transfer_confirmation
+from security.mail import send_transfer_confirmation, send_security_alert
 from security.field_crypto import encrypt_field, decrypt_field
 from security.tx_signing import sign_transaction, compute_hmac, verify_transaction_signature
 
@@ -88,9 +89,16 @@ def _audit(event_type: str, user_id: int | None, detail: str, ip: str = ""):
 # ---------------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(..., min_length=8)
     national_id: str | None = None
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_complexity(cls, v: str) -> str:
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", v):
+            raise ValueError('Password must be at least 8 characters and contain uppercase, lowercase, number, and special character.')
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -106,6 +114,8 @@ class MfaVerifyRequest(BaseModel):
 class TransferRequest(BaseModel):
     to_account_number: str
     amount_cents: int
+    mfa_code: str
+    note: str | None = Field(None, pattern=r"^[a-zA-Z0-9\s\-_.,!]*$")
 
 
 class BalanceRequest(BaseModel):
@@ -152,12 +162,10 @@ def register(req: RegisterRequest, request: Request):
         # Create bank account
         account_number = _generate_account_number()
         national_id_enc = encrypt_field(req.national_id) if req.national_id else None
-        # NOTE (System-Level Requirement): Removed the prototype £1000 welcome balance.
-        # In a real banking system, money cannot be created out of thin air.
-        # It must enter via a verifiable deposit/funding transaction to maintain ledger integrity.
+        # Re-enabled welcome bonus for testing purposes (10,000 GBP = 1,000,000 cents)
         cursor.execute(
             "INSERT INTO accounts (user_id, account_number, balance_cents, national_id_encrypted) VALUES (%s,%s,%s,%s)",
-            (user_id, account_number, 0, national_id_enc)
+            (user_id, account_number, 1000000, national_id_enc)
         )
         conn.commit()
 
@@ -167,7 +175,7 @@ def register(req: RegisterRequest, request: Request):
         return {
             "message": "Registration successful",
             "account_number": account_number,
-            "welcome_balance": "£0.00"
+            "welcome_balance": "£10,000.00"
         }
     finally:
         cursor.close()
@@ -195,6 +203,11 @@ def login(req: LoginRequest, request: Request):
             _audit("LOGIN_FAIL", None, f"Unknown email: {req.email}", ip)
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
+        # Check for freeze
+        if user["is_frozen"]:
+            _audit("LOGIN_FAIL_FROZEN", user["id"], "Attempted login to frozen account", ip)
+            raise HTTPException(status_code=423, detail="Account is frozen. Please contact support.")
+
         # Check account lockout
         if user["locked_until"] and user["locked_until"] > datetime.datetime.utcnow():
             remaining = (user["locked_until"] - datetime.datetime.utcnow()).seconds // 60
@@ -221,10 +234,15 @@ def login(req: LoginRequest, request: Request):
                 _audit("LOGIN_FAIL", user["id"], f"Failed attempt {failed}/{MAX_FAILED_LOGINS}", ip)
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        # Credentials valid — reset failed counter
+        # Track IP and send alert if it's a new IP
+        if user["last_ip"] and user["last_ip"] != ip:
+            send_security_alert(req.email, ip)
+            _audit("SECURITY_ALERT", user["id"], f"New IP login detected: {ip}", ip)
+
+        # Credentials valid — reset failed counter and update IP
         cursor.execute(
-            "UPDATE users SET failed_logins=0, locked_until=NULL WHERE id=%s",
-            (user["id"],)
+            "UPDATE users SET failed_logins=0, locked_until=NULL, last_ip=%s WHERE id=%s",
+            (ip, user["id"])
         )
         conn.commit()
 
@@ -471,11 +489,29 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         if from_account["balance_cents"] < req.amount_cents:
             raise HTTPException(status_code=400, detail="Insufficient funds")
 
+        # Fetch user status and MFA secret for Step-up Auth
+        cursor.execute("SELECT mfa_secret_encrypted, is_frozen FROM users WHERE id=%s", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        if user["is_frozen"]:
+            raise HTTPException(status_code=423, detail="Account is frozen. Cannot transfer funds.")
+        if not user["mfa_secret_encrypted"]:
+            raise HTTPException(status_code=400, detail="MFA not configured")
+
+        # Verify transaction OTP
+        secret = decrypt_field(user["mfa_secret_encrypted"])
+        if not verify_totp(secret, req.mfa_code):
+            _audit("TRANSFER_MFA_FAIL", user_id, "Invalid TOTP for transaction", ip)
+            raise HTTPException(status_code=401, detail="Invalid transaction OTP")
+
         # Build transaction data for signing
         tx_data = {
             "from_account_id": from_account["id"],
             "to_account_id": to_account["id"],
-            "amount_cents": req.amount_cents
+            "amount_cents": req.amount_cents,
+            "note": req.note
         }
         signature = sign_transaction(tx_data)    # ECDSA (Control Point J)
         tag = compute_hmac(tx_data)              # HMAC-SHA256 (Control Point I)
@@ -585,6 +621,28 @@ def get_audit_log(auth: dict = Depends(require_admin)):
     finally:
         cursor.close()
         conn.close()
+
+# --- Freeze Account ---------------------------------------------------------
+
+@app.post("/freeze-account")
+def freeze_account(request: Request, auth: dict = Depends(require_auth)):
+    """Kill switch to instantly freeze the authenticated account."""
+    user_id = int(auth["sub"])
+    ip = request.client.host if request.client else ""
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET is_frozen=TRUE WHERE id=%s", (user_id,))
+        conn.commit()
+        
+        _audit("ACCOUNT_FROZEN", user_id, "User activated kill switch", ip)
+        
+        return {"message": "Account has been frozen."}
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 # ---------------------------------------------------------------------------

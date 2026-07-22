@@ -60,10 +60,13 @@ export const getBalance = () =>
 export const getTransactions = () =>
   api.get('/transactions');
 
-export const transfer = (toAccountNumber, amountCents) =>
-  api.post('/transfer', { to_account_number: toAccountNumber, amount_cents: amountCents });
+export const transfer = (toAccountNumber, amountCents, mfaCode, note) =>
+  api.post('/transfer', { to_account_number: toAccountNumber, amount_cents: amountCents, mfa_code: mfaCode, note });
 
 export const getAuditLog = () =>
   api.get('/admin/audit-log');
+
+export const freezeAccount = () =>
+  api.post('/freeze-account');
 
 export default api;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 import AuthLayout from './layouts/AuthLayout';
 import AppLayout from './layouts/AppLayout';
 
@@ -16,6 +17,7 @@ import AdminAuditLog from './pages/AdminAuditLog';
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" />
       <AuthProvider>
         <Routes>
           {/* Auth Routes */}

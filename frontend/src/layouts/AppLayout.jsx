@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 
@@ -11,9 +12,31 @@ export default function AppLayout() {
   }
 
   const handleLogout = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     logout();
   };
+
+  const timerRef = useRef(null);
+
+  const resetTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      toast.error('Session expired due to inactivity. Please log in again.', { duration: 5000 });
+      handleLogout();
+    }, 5 * 60 * 1000); // 5 minutes
+  };
+
+  useEffect(() => {
+    // Set up activity listeners
+    const events = ['mousemove', 'keydown', 'scroll', 'click'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer(); // Start timer initially
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, []);
 
   return (
     <div className="app-layout">

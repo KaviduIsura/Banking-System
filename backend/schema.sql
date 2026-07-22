@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
   role VARCHAR(20) DEFAULT 'customer',
   failed_logins INT DEFAULT 0,
   locked_until DATETIME NULL,
+  last_ip VARCHAR(45) NULL,
+  is_frozen BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

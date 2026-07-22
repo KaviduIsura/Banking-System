@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getBalance, getTransactions } from '../api';
+import { getBalance, getTransactions, freezeAccount } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function Dashboard() {
   const [balance, setBalance] = useState(null);
@@ -8,6 +10,19 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleFreeze = async () => {
+    if (window.confirm("Are you sure you want to freeze your account? You will be logged out and cannot log back in until you contact support.")) {
+      try {
+        await freezeAccount();
+        toast.success("Account frozen successfully.");
+        logout();
+      } catch (err) {
+        toast.error("Failed to freeze account.");
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,6 +125,14 @@ export default function Dashboard() {
                 VERIFIED
               </span>
             </div>
+            
+            <button 
+              className="btn btn-ghost" 
+              style={{ color: 'var(--danger)', borderColor: 'var(--danger-tint)', marginTop: '0.5rem' }}
+              onClick={handleFreeze}
+            >
+              Freeze Account
+            </button>
           </div>
         </div>
       </div>

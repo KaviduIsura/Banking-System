@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { setupInitialMfa, confirmMfa } from '../api';
+import { toast } from 'react-hot-toast';
 
 export default function MfaSetup() {
   const [qrCode, setQrCode] = useState('');
@@ -9,7 +10,6 @@ export default function MfaSetup() {
   
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
-  const [error, setError] = useState('');
   const [showSecret, setShowSecret] = useState(false);
   
   const location = useLocation();
@@ -29,7 +29,7 @@ export default function MfaSetup() {
         setQrCode(res.data.qr_code_base64 || res.data.qr_code);
         setSecret(res.data.secret_plaintext || res.data.secret);
       } catch (err) {
-        setError(err.response?.data?.detail || 'Failed to initialize MFA setup');
+        toast.error(err.response?.data?.detail || 'Failed to initialize MFA setup');
       } finally {
         setLoading(false);
       }
@@ -42,15 +42,15 @@ export default function MfaSetup() {
     if (code.length !== 6) return;
     
     setConfirming(true);
-    setError('');
     
     try {
       await confirmMfa(state.userId, code);
       // Once confirmed, route back to login to get the JWT
       // (as per backend design: confirm doesn't return JWT, login does)
-      navigate('/login', { state: { message: 'MFA enabled successfully! Please sign in.' } });
+      toast.success('MFA enabled successfully! Please sign in.');
+      navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid code. Try again.');
+      toast.error(err.response?.data?.detail || 'Invalid code. Try again.');
     } finally {
       setConfirming(false);
     }
@@ -67,8 +67,6 @@ export default function MfaSetup() {
       <p style={{ textAlign: 'center', color: 'var(--ink-soft)', fontSize: '0.875rem', marginBottom: '2rem' }}>
         Two-factor authentication is required.
       </p>
-      
-      {error && <div className="alert alert-error">{error}</div>}
       
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>Generating secure key...</div>
@@ -117,7 +115,7 @@ export default function MfaSetup() {
                 type="text"
                 className="form-input mono"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\\D/g, '').slice(0, 6))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
                 maxLength={6}
                 inputMode="numeric"

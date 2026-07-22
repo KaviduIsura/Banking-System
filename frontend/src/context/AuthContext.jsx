@@ -5,6 +5,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // { id, role, exp }
+  const [loading, setLoading] = useState(true);
 
   // Simple JWT decoder (no verification, just decoding payload)
   const decodeJwt = (token) => {
@@ -19,6 +20,20 @@ export function AuthProvider({ children }) {
       return null;
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decoded = decodeJwt(token);
+      if (decoded && decoded.exp * 1000 > Date.now()) {
+        setToken(token);
+        setUser({ id: decoded.sub, role: decoded.role, exp: decoded.exp });
+      } else {
+        localStorage.removeItem('token');
+      }
+    }
+    setLoading(false);
+  }, []);
 
   const login = (token) => {
     setToken(token);
@@ -39,7 +54,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
