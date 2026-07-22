@@ -20,6 +20,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      clearToken();
+      // Use window.location to force a redirect back to login if unauthorized
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth
 export const register = (email, password, nationalId) =>
   api.post('/register', { email, password, national_id: nationalId });
@@ -48,5 +62,8 @@ export const getTransactions = () =>
 
 export const transfer = (toAccountNumber, amountCents) =>
   api.post('/transfer', { to_account_number: toAccountNumber, amount_cents: amountCents });
+
+export const getAuditLog = () =>
+  api.get('/admin/audit-log');
 
 export default api;
