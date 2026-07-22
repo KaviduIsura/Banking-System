@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SecureBank API Documentation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0f1117;
+      --bg2: #161b27;
+      --bg3: #1e2535;
+      --border: #2a3347;
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --green: #10b981;
+      --red: #ef4444;
+      --gold: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --code-bg: #0d1117;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ── Print styles ── */
+    @media print {
+      body { background: white; color: #111; font-size: 12px; }
+      .no-print { display: none !important; }
+      .sidebar { display: none; }
+      .main { margin-left: 0 !important; max-width: 100% !important; }
+      pre, code { background: #f3f4f6 !important; color: #111 !important; border: 1px solid #d1d5db; }
+      .card { border: 1px solid #d1d5db; background: #f9fafb !important; }
+      h1, h2, h3 { color: #111; }
+      .badge { border: 1px solid #d1d5db; }
+      a { color: #2563eb; }
+      .method-post { background: #fef3c7; color: #92400e; }
+      .method-get { background: #d1fae5; color: #065f46; }
+      .alert-warn { background: #fef3c7; border-color: #f59e0b; }
+      .cp-badge { background: #ede9fe; color: #5b21b6; }
+      .status-ok { color: #059669; }
+    }
+
+    /* ── Layout ── */
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: 260px; height: 100vh;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 24px 0;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .sidebar-brand h2 {
+      font-size: 1rem; font-weight: 700;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sidebar-brand p { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+    .sidebar nav a {
+      display: block; padding: 6px 20px;
+      color: var(--muted); font-size: 0.82rem;
+      text-decoration: none; border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .sidebar nav a:hover { color: var(--text); border-left-color: var(--accent); background: rgba(59,130,246,0.05); }
+    .sidebar nav .nav-section { padding: 10px 20px 4px; font-size: 0.7rem; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .main {
+      margin-left: 260px;
+      max-width: 920px;
+      padding: 48px 40px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12));
+      border: 1px solid rgba(99,179,237,0.2);
+      border-radius: 16px; padding: 40px;
+      margin-bottom: 48px;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
+      color: #93c5fd; font-size: 0.75rem; font-weight: 600;
+      padding: 4px 12px; border-radius: 100px; margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .hero p { color: var(--muted); font-size: 0.95rem; max-width: 580px; }
+
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 20px; }
+    .hero-meta span { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+    .hero-meta code { background: var(--code-bg); border: 1px solid var(--border); color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+
+    /* ── Download button ── */
+    .download-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white; text-decoration: none; font-weight: 600; font-size: 0.875rem;
+      padding: 10px 20px; border-radius: 8px; margin-top: 20px;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+      border: none; cursor: pointer; transition: all 0.2s;
+    }
+    .download-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+
+    /* ── Section ── */
+    h2 {
+      font-size: 1.4rem; font-weight: 700; margin: 48px 0 20px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    h3 { font-size: 1.05rem; font-weight: 700; margin: 28px 0 12px; color: #cbd5e1; }
+    h4 { font-size: 0.85rem; font-weight: 700; margin: 16px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    p { margin-bottom: 12px; color: #cbd5e1; }
+
+    /* ── Endpoint card ── */
+    .endpoint-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; margin-bottom: 32px; overflow: hidden;
+    }
+
+    .endpoint-header {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .method-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; font-weight: 700;
+      padding: 4px 10px; border-radius: 6px;
+      min-width: 52px; text-align: center; flex-shrink: 0; margin-top: 2px;
+    }
+
+    .method-get  { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .method-post { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem; font-weight: 600; color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .endpoint-desc { color: var(--muted); font-size: 0.85rem; }
+
+    .endpoint-body { padding: 20px 24px; }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+    .badge {
+      font-size: 0.72rem; font-weight: 600; padding: 3px 10px;
+      border-radius: 100px; white-space: nowrap;
+    }
+
+    .badge-auth-yes { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+    .badge-auth-no  { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid var(--border); }
+    .badge-cp       { background: rgba(139,92,246,0.12); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.25); }
+    .badge-warn     { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+
+    /* ── Code block ── */
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+      line-height: 1.6; margin: 8px 0 16px; color: #e2e8f0;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 4px; color: #93c5fd;
+    }
+
+    pre code { background: none; border: none; padding: 0; color: inherit; font-size: 1em; }
+
+    .code-label {
+      font-size: 0.7rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px; margin-top: 16px;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%; border-collapse: collapse; margin: 12px 0 16px;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: var(--bg3); color: var(--muted); font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+      padding: 8px 12px; border: 1px solid var(--border); text-align: left;
+    }
+
+    td { padding: 8px 12px; border: 1px solid var(--border); color: #cbd5e1; vertical-align: top; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    td code { font-size: 0.78em; }
+
+    .status-ok   { color: #6ee7b7; font-weight: 600; }
+    .status-warn { color: #fcd34d; font-weight: 600; }
+    .status-err  { color: #fca5a5; font-weight: 600; }
+
+    /* ── Alert ── */
+    .alert {
+      padding: 12px 16px; border-radius: 8px; margin: 12px 0;
+      font-size: 0.85rem; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .alert-warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fcd34d; }
+    .alert-info { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; }
+    .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Flow diagram ── */
+    .flow {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    }
+
+    .flow-step {
+      display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px;
+    }
+    .flow-num {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white; font-size: 0.7rem; font-weight: 700;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .flow-text { color: #cbd5e1; line-height: 1.5; }
+    .flow-text code { font-size: 0.85em; }
+
+    /* ── Security table ── */
+    .security-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; margin: 16px 0;
+    }
+
+    .sec-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px;
+    }
+
+    .sec-card h4 {
+      font-size: 0.75rem; color: #93c5fd; margin-bottom: 6px; margin-top: 0;
+    }
+
+    .sec-card p { font-size: 0.82rem; color: var(--muted); margin: 0; }
+
+    /* ── TOC overview table ── */
+    .overview-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 24px 16px; }
+      .security-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar no-print">
+  <div class="sidebar-brand">
+    <h2>🏦 SecureBank API</h2>
+    <p>v1.0.0 — CW2 Prototype</p>
+  </div>
+  <nav>
+    <div class="nav-section">Overview</div>
+    <a href="#architecture">Architecture</a>
+    <a href="#security">Security Modules</a>
+    <a href="#flow">Login Flow</a>
+
+    <div class="nav-section">Endpoints</div>
+    <a href="#ep-health">GET /health</a>
+    <a href="#ep-register">POST /register</a>
+    <a href="#ep-login">POST /login</a>
+    <a href="#ep-mfa-setup">POST /mfa/setup</a>
+    <a href="#ep-mfa-confirm">POST /mfa/confirm</a>
+    <a href="#ep-mfa-confirm-auth">POST /mfa/confirm-auth</a>
+    <a href="#ep-mfa-verify">POST /mfa/verify</a>
+    <a href="#ep-balance">GET /balance</a>
+    <a href="#ep-transfer">POST /transfer</a>
+    <a href="#ep-transactions">GET /transactions</a>
+    <a href="#ep-audit">GET /admin/audit-log</a>
+    <a href="#ep-dev-token">POST /dev/get-token</a>
+    <a href="#ep-dev-mfa">POST /dev/setup-mfa</a>
+
+    <div class="nav-section">Reference</div>
+    <a href="#schema">Database Schema</a>
+    <a href="#files">Key Files</a>
+  </nav>
+</aside>
+
+<!-- Main content -->
+<main class="main">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">📄 API Reference Documentation</div>
+    <h1>SecureBank API</h1>
+    <p>Complete endpoint reference for the CW2 Banking Prototype — FastAPI + MySQL + React. Covers all 13 endpoints with live test results, security explanations, and CW2 control point mappings.</p>
+    <div class="hero-meta">
+      <span>⚡ <code>https://localhost:8443</code></span>
+      <span>📖 <code>https://localhost:8443/docs</code></span>
+      <span>🔒 TLS + JWT RS256</span>
+    </div>
+    <button class="download-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+
+  <!-- Architecture -->
+  <h2 id="architecture">🏗️ Architecture Overview</h2>
+  <pre>Browser / React App (http://localhost:5173)
+        │
+        │  HTTPS (TLS 1.2+ — self-signed cert for local dev)
+        ▼
+FastAPI Backend (https://localhost:8443)
+        │
+        ├── security/password.py     ← Argon2id password hashing
+        ├── security/jwt_auth.py     ← RS256 JWT tokens
+        ├── security/mfa.py          ← TOTP 2-factor authentication
+        ├── security/field_crypto.py ← AES-256-GCM field encryption
+        ├── security/tx_signing.py   ← ECDSA + HMAC-SHA256 signing
+        └── db.py                    ← MySQL connection pool
+                 │
+                 ▼
+          MySQL (securebank database)
+          ├── users
+          ├── accounts
+          ├── transactions
+          └── audit_log</pre>
+
+  <p>The application implements <strong>defence in depth</strong> — multiple independent security layers so compromising one layer does not compromise the whole system.</p>
+
+  <!-- Security Modules -->
+  <h2 id="security">🔐 Security Modules</h2>
+  <div class="security-grid">
+    <div class="sec-card">
+      <h4>Argon2id — Control Point G</h4>
+      <p>Memory-hard password hashing. Requires ~19MB RAM per hash — makes GPU/ASIC cracking impractical. OWASP recommended over bcrypt.</p>
+    </div>
+    <div class="sec-card">
+      <h4>JWT RS256 — Control Point E</h4>
+      <p>Asymmetric tokens signed with RSA 2048-bit private key, verified with public key. 15-minute expiry. API gateway for all protected routes.</p>
+    </div>
+    <div class="sec-card">
+      <h4>TOTP MFA — Control Point G</h4>
+      <p>RFC 6238 Time-based OTP. 30-second codes via Google Authenticator. TOTP secret encrypted with AES-256-GCM before storage.</p>
+    </div>
+    <div class="sec-card">
+      <h4>AES-256-GCM — Control Points I, J</h4>
+      <p>Column-level encryption for MFA secret and national ID. Provides confidentiality + integrity (GCM tag detects tampering).</p>
+    </div>
+    <div class="sec-card">
+      <h4>ECDSA P-256 — Control Point J</h4>
+      <p>Every transaction signed with EC private key. Simulates HSM signing. Non-repudiation — proves transaction was authorised by backend.</p>
+    </div>
+    <div class="sec-card">
+      <h4>HMAC-SHA256 — Control Point I</h4>
+      <p>Fast symmetric integrity tag per transaction. Combined with ECDSA: HMAC for speed, ECDSA for non-repudiation.</p>
+    </div>
+    <div class="sec-card">
+      <h4>Rate Limiting — Control Point A</h4>
+      <p>SlowAPI limits /login to 5 req/15min per IP. Account lockout after 5 failures. Combined: network + application brute-force protection.</p>
+    </div>
+    <div class="sec-card">
+      <h4>Least-Privilege DB — Control Point H</h4>
+      <p>account_service: SELECT/UPDATE on accounts only. transaction_service: SELECT/INSERT on transactions. Root not used by app code.</p>
+    </div>
+  </div>
+
+  <!-- Login Flow -->
+  <h2 id="flow">🔄 Complete Login Flow</h2>
+  <div class="flow">
+    <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>POST /register</strong> — create account → get <code>account_number</code></div></div>
+    <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>POST /dev/setup-mfa</strong> — get QR code + plaintext secret</div></div>
+    <div class="flow-step"><div class="flow-num">3</div><div class="flow-text">📱 Scan QR in <strong>Google Authenticator</strong> (or enter secret manually)</div></div>
+    <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>POST /mfa/confirm</strong> — enter first 6-digit code → MFA enabled</div></div>
+    <div class="flow-step" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)"><div class="flow-num" style="background:#10b981">→</div><div class="flow-text" style="color:#94a3b8">From now on, login uses these two steps:</div></div>
+    <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>POST /login</strong> — email + password → get <code>user_id</code></div></div>
+    <div class="flow-step"><div class="flow-num">6</div><div class="flow-text"><strong>POST /mfa/verify</strong> — 6-digit TOTP → get <code>access_token</code> (JWT)</div></div>
+    <div class="flow-step"><div class="flow-num">7</div><div class="flow-text">Use header <code>Authorization: Bearer &lt;token&gt;</code> on all protected routes</div></div>
+  </div>
+
+  <hr/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2>📡 Endpoint Reference</h2>
+
+  <!-- 1. Health -->
+  <div class="endpoint-card" id="ep-health">
+    <div class="endpoint-header">
+      <span class="method-badge method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/health</div>
+        <div class="endpoint-desc">Server health check — no authentication required</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth</span>
+      </div>
+      <p><strong>What it does:</strong> Returns a simple JSON confirming the service is alive and responding.</p>
+      <p><strong>Why it exists:</strong> Load balancers, Docker healthchecks, and monitoring systems call this endpoint before routing traffic. If it returns anything other than 200, the instance is taken out of rotation.</p>
+      <div class="code-label">Request</div>
+      <pre>curl -sk https://localhost:8443/health</pre>
+      <div class="code-label">Response ✅ 200 OK</div>
+      <pre>{ "status": "ok", "service": "SecureBank API" }</pre>
+    </div>
+  </div>
+
+  <!-- 2. Register -->
+  <div class="endpoint-card" id="ep-register">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/register</div>
+        <div class="endpoint-desc">Create a new user and bank account</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth</span>
+        <span class="badge badge-cp">Control Point G — Argon2id</span>
+        <span class="badge badge-cp">Control Point I — AES-256-GCM</span>
+      </div>
+      <h4>How it works</h4>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-num">1</div><div class="flow-text">Check email not already in use (<code>409 Conflict</code> if duplicate)</div></div>
+        <div class="flow-step"><div class="flow-num">2</div><div class="flow-text">Hash password with <strong>Argon2id</strong> (time_cost=2, memory_cost=19MB, parallelism=1)</div></div>
+        <div class="flow-step"><div class="flow-num">3</div><div class="flow-text">Insert user into <code>users</code> table</div></div>
+        <div class="flow-step"><div class="flow-num">4</div><div class="flow-text">Generate random account number <code>SB</code> + 10 digits</div></div>
+        <div class="flow-step"><div class="flow-num">5</div><div class="flow-text">Encrypt <code>national_id</code> with <strong>AES-256-GCM</strong> if provided</div></div>
+        <div class="flow-step"><div class="flow-num">6</div><div class="flow-text">Create account with £1000 welcome balance (100,000 cents)</div></div>
+        <div class="flow-step"><div class="flow-num">7</div><div class="flow-text">Write <code>REGISTER</code> event to <code>audit_log</code></div></div>
+      </div>
+      <p><strong>Why Argon2id?</strong> It is <em>memory-hard</em> — each hash requires ~19MB RAM, making GPU/ASIC cracking impractical. Superior to bcrypt for modern threat models.</p>
+      <p><strong>Why AES-256-GCM for national_id?</strong> National ID numbers are sensitive PII. GCM provides both <em>confidentiality</em> (encrypted) and <em>integrity</em> (GCM authentication tag detects any tampering).</p>
+      <p><strong>Why store balance in cents?</strong> Floating-point arithmetic is imprecise (<code>0.1 + 0.2 = 0.30000000000000004</code>). Integer cents eliminate rounding errors that could cause money to disappear.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{
+  "email": "alice@securebank.com",
+  "password": "SecurePass123!",
+  "national_id": "123456789V"   // optional — encrypted with AES-256-GCM
+}</pre>
+      <div class="code-label">Response ✅ 201 Created</div>
+      <pre>{
+  "message": "Registration successful",
+  "account_number": "SB4771589783",
+  "welcome_balance": "£1000.00"
+}</pre>
+      <h4>Error Responses</h4>
+      <table>
+        <tr><th>Code</th><th>Reason</th></tr>
+        <tr><td><span class="status-warn">409</span></td><td>Email already registered</td></tr>
+        <tr><td><span class="status-err">500</span></td><td>Database error</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. Login -->
+  <div class="endpoint-card" id="ep-login">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/login</div>
+        <div class="endpoint-desc">Step 1 of 2-factor login — verifies email and password</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth</span>
+        <span class="badge badge-cp">Control Point A — Rate Limiting</span>
+        <span class="badge badge-cp">Control Point G — Argon2id verify</span>
+      </div>
+      <h4>How it works</h4>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-num">1</div><div class="flow-text">Rate limited: <strong>5 requests per 15 minutes per IP</strong> (SlowAPI)</div></div>
+        <div class="flow-step"><div class="flow-num">2</div><div class="flow-text">Look up user by email</div></div>
+        <div class="flow-step"><div class="flow-num">3</div><div class="flow-text">Check if <code>locked_until > now</code> — reject if locked</div></div>
+        <div class="flow-step"><div class="flow-num">4</div><div class="flow-text">Verify password with Argon2id constant-time comparison</div></div>
+        <div class="flow-step"><div class="flow-num">5</div><div class="flow-text">On failure: increment <code>failed_logins</code>; lock after 5 failures (15 min)</div></div>
+        <div class="flow-step"><div class="flow-num">6</div><div class="flow-text">On success: reset counter, log <code>LOGIN_STEP1</code>, return <code>user_id</code></div></div>
+      </div>
+      <p><strong>Why account lockout?</strong> Prevents automated brute-force attacks. 5 failures → 15-minute lockout → reduces attack rate from billions/second to ~1 attempt per 15 minutes.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{
+  "email": "alice@securebank.com",
+  "password": "SecurePass123!"
+}</pre>
+      <div class="code-label">Response ✅ 200 — MFA already set up</div>
+      <pre>{ "mfa_required": true, "mfa_enabled": true, "user_id": 1 }</pre>
+      <div class="code-label">Response ✅ 200 — MFA not yet configured</div>
+      <pre>{ "mfa_required": true, "mfa_enabled": false, "user_id": 1 }</pre>
+      <h4>Error Responses</h4>
+      <table>
+        <tr><th>Code</th><th>Reason</th></tr>
+        <tr><td><span class="status-err">401</span></td><td>Wrong password</td></tr>
+        <tr><td><span class="status-warn">423</span></td><td>Account locked — too many failures</td></tr>
+        <tr><td><span class="status-warn">429</span></td><td>Rate limit exceeded (5/15min per IP)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. MFA Setup -->
+  <div class="endpoint-card" id="ep-mfa-setup">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/mfa/setup</div>
+        <div class="endpoint-desc">Generate TOTP secret and QR code for Google Authenticator enrolment</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-yes">🔒 JWT Required</span>
+        <span class="badge badge-cp">Control Point G — TOTP</span>
+        <span class="badge badge-cp">Control Point I — AES-256-GCM</span>
+      </div>
+      <p><strong>How it works:</strong> Generates a cryptographically random base32 TOTP secret, <em>encrypts it with AES-256-GCM</em>, stores it in the database, and returns a base64-encoded QR code PNG.</p>
+      <p><strong>Why encrypt the TOTP secret?</strong> If the database is breached, a plaintext TOTP secret would let an attacker generate valid MFA codes for every user — completely bypassing 2FA. Encryption means the attacker also needs the AES key.</p>
+      <p><strong>Why base32?</strong> RFC 6238 (TOTP standard) specifies base32 — it uses only uppercase letters and digits, making manual entry in an authenticator app practical.</p>
+      <div class="code-label">Request (header only)</div>
+      <pre>curl -sk -X POST https://localhost:8443/mfa/setup \
+  -H "Authorization: Bearer &lt;jwt&gt;"</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{
+  "qr_code": "iVBORw0KGgoAAAANSUhEUgAAAeoAAAHqAQ...",   // base64 PNG
+  "message": "Scan this QR code with Google Authenticator, then call /mfa/confirm"
+}</pre>
+      <div class="alert alert-info"><span class="alert-icon">💡</span>Embed QR in HTML: <code>&lt;img src="data:image/png;base64,{qr_code}"&gt;</code></div>
+    </div>
+  </div>
+
+  <!-- 5. MFA Confirm -->
+  <div class="endpoint-card" id="ep-mfa-confirm">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/mfa/confirm</div>
+        <div class="endpoint-desc">Enable MFA after scanning the QR code — verify first TOTP code</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth (uses user_id)</span>
+        <span class="badge badge-cp">Control Point G — TOTP verify</span>
+      </div>
+      <p>Decrypts the stored TOTP secret and verifies the submitted 6-digit code using <code>pyotp.TOTP.verify()</code> with <code>valid_window=1</code> (±30 seconds clock drift tolerance). On success, sets <code>mfa_enabled = TRUE</code>.</p>
+      <p><strong>Why <code>valid_window=1</code>?</strong> Real devices have clock drift. Window of 1 accepts the current + adjacent 30-second slots — prevents false rejections without meaningfully reducing security.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{ "user_id": 1, "code": "123456" }</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{ "message": "MFA enabled successfully" }</pre>
+    </div>
+  </div>
+
+  <!-- 6. MFA Confirm Auth -->
+  <div class="endpoint-card" id="ep-mfa-confirm-auth">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/mfa/confirm-auth</div>
+        <div class="endpoint-desc">Enable MFA for an already-authenticated user (Dashboard flow)</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-yes">🔒 JWT Required</span>
+        <span class="badge badge-cp">Control Point E — JWT</span>
+        <span class="badge badge-cp">Control Point G — TOTP</span>
+      </div>
+      <p>Identical to <code>/mfa/confirm</code> but reads <code>user_id</code> from the JWT <code>sub</code> claim instead of the request body. Used from the Dashboard when the user is already logged in.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{ "code": "654321" }</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{ "message": "MFA enabled successfully" }</pre>
+    </div>
+  </div>
+
+  <!-- 7. MFA Verify -->
+  <div class="endpoint-card" id="ep-mfa-verify">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/mfa/verify</div>
+        <div class="endpoint-desc">Step 2 of 2-factor login — verify TOTP code and issue JWT</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth (uses user_id from step 1)</span>
+        <span class="badge badge-cp">Control Point E — issues RS256 JWT</span>
+        <span class="badge badge-cp">Control Point G — TOTP verify</span>
+      </div>
+      <p>Verifies the 6-digit TOTP code, then issues a <strong>short-lived RS256 JWT</strong> (15-minute expiry) signed with the RSA 2048-bit private key.</p>
+      <p><strong>Why RS256 (asymmetric) instead of HS256 (symmetric)?</strong><br>
+      HS256 shares one secret key with every verification service — a breach anywhere compromises all tokens. RS256 uses a keypair: the <em>private key signs</em> (backend only), the <em>public key verifies</em> (shareable). Zero risk from distributing the public key.</p>
+      <p><strong>Why 15-minute expiry?</strong> Limits damage from stolen tokens — a captured JWT is useless after 15 minutes.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{ "user_id": 1, "code": "654321" }</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}</pre>
+      <div class="alert alert-info"><span class="alert-icon">💡</span>Use as: <code>Authorization: Bearer eyJhbGci...</code></div>
+      <h4>JWT Payload (decoded)</h4>
+      <pre>{ "sub": "1", "role": "customer", "iat": 1784662929, "exp": 1784663829 }</pre>
+    </div>
+  </div>
+
+  <!-- 8. Balance -->
+  <div class="endpoint-card" id="ep-balance">
+    <div class="endpoint-header">
+      <span class="method-badge method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/balance</div>
+        <div class="endpoint-desc">Return the authenticated user's account balance</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-yes">🔒 JWT Required</span>
+        <span class="badge badge-cp">Control Point E — JWT gateway</span>
+      </div>
+      <p>The <code>require_auth</code> FastAPI dependency extracts and verifies the JWT. <code>user_id</code> is read from the JWT <code>sub</code> claim — the user can only see their own balance.</p>
+      <div class="code-label">Request</div>
+      <pre>curl -sk https://localhost:8443/balance \
+  -H "Authorization: Bearer &lt;jwt&gt;"</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{
+  "account_number": "SB4771589783",
+  "balance_cents": 100000,
+  "balance_display": "£1000.00"
+}</pre>
+      <h4>Error Responses</h4>
+      <table>
+        <tr><th>Code</th><th>Reason</th></tr>
+        <tr><td><span class="status-err">401</span></td><td>Missing, expired, or tampered JWT</td></tr>
+        <tr><td><span class="status-err">404</span></td><td>Account not found</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 9. Transfer -->
+  <div class="endpoint-card" id="ep-transfer">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/transfer</div>
+        <div class="endpoint-desc">Transfer funds between accounts — ECDSA signed + HMAC integrity</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-yes">🔒 JWT Required</span>
+        <span class="badge badge-cp">Control Point E — JWT</span>
+        <span class="badge badge-cp">Control Point I — HMAC-SHA256</span>
+        <span class="badge badge-cp">Control Point J — ECDSA P-256</span>
+      </div>
+      <h4>How it works</h4>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-num">1</div><div class="flow-text">JWT verified — sender identity confirmed from <code>sub</code> claim</div></div>
+        <div class="flow-step"><div class="flow-num">2</div><div class="flow-text">Validate amount &gt; 0, find sender and recipient accounts</div></div>
+        <div class="flow-step"><div class="flow-num">3</div><div class="flow-text">Check sender ≠ recipient, check sufficient balance</div></div>
+        <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>Sign</strong> transaction data with <strong>ECDSA P-256</strong> private key</div></div>
+        <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Compute HMAC-SHA256</strong> integrity tag</div></div>
+        <div class="flow-step"><div class="flow-num">6</div><div class="flow-text"><strong>Atomic balance update</strong>: debit sender, credit recipient in one DB transaction</div></div>
+        <div class="flow-step"><div class="flow-num">7</div><div class="flow-text">Store signature + HMAC in <code>transactions</code> table. Log to <code>audit_log</code>.</div></div>
+      </div>
+      <p><strong>Why ECDSA?</strong> Proves the transaction was authorised by the system holding the private key (non-repudiation). Simulates an HSM signing operation — nobody can forge a signature without the EC private key.</p>
+      <p><strong>Why also HMAC?</strong> ECDSA is powerful but slow. HMAC-SHA256 is a fast symmetric integrity check — together they provide non-repudiation (ECDSA) and fast tamper detection (HMAC).</p>
+      <p><strong>Why <code>sort_keys=True</code> in JSON serialisation?</strong> Without sorting, the same transaction dict could serialise differently — breaking signature verification. Deterministic serialisation is essential for cryptographic signing.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{
+  "to_account_number": "SB9964885553",
+  "amount_cents": 5000
+}</pre>
+      <div class="code-label">Response ✅ (Live result from test run)</div>
+      <pre>{
+  "message": "Transfer successful",
+  "amount": "£50.00",
+  "signature": "MEUCIF+ETyMUNke144G6hcIIrcidcib/5nsQeTb4jJMlr4//AiEA8me5PyDak...",
+  "to_account": "SB9964885553"
+}</pre>
+      <h4>Error Responses</h4>
+      <table>
+        <tr><th>Code</th><th>Reason</th></tr>
+        <tr><td><span class="status-err">400</span></td><td>Insufficient funds</td></tr>
+        <tr><td><span class="status-err">400</span></td><td>Cannot transfer to same account</td></tr>
+        <tr><td><span class="status-err">400</span></td><td>Amount must be positive</td></tr>
+        <tr><td><span class="status-err">404</span></td><td>Sender or recipient account not found</td></tr>
+        <tr><td><span class="status-err">401</span></td><td>Expired or invalid JWT</td></tr>
+        <tr><td><span class="status-warn">429</span></td><td>Rate limit: 10/minute per IP</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 10. Transactions -->
+  <div class="endpoint-card" id="ep-transactions">
+    <div class="endpoint-header">
+      <span class="method-badge method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/transactions</div>
+        <div class="endpoint-desc">Last 20 transactions for the authenticated user</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-yes">🔒 JWT Required</span>
+        <span class="badge badge-cp">Control Point E — JWT gateway</span>
+      </div>
+      <p>SQL JOIN across <code>transactions</code>, sender, and recipient accounts. Each row is tagged <code>"type": "debit"</code> or <code>"credit"</code> from the viewer's perspective.</p>
+      <div class="code-label">Response ✅ (Live result from test run)</div>
+      <pre>{
+  "transactions": [{
+    "id": 1,
+    "amount_cents": 5000,
+    "amount_display": "£50.00",
+    "type": "debit",
+    "from_account": "SB4771589783",
+    "to_account": "SB9964885553",
+    "status": "completed",
+    "created_at": "2026-07-22 01:13:48"
+  }]
+}</pre>
+    </div>
+  </div>
+
+  <!-- 11. Audit Log -->
+  <div class="endpoint-card" id="ep-audit">
+    <div class="endpoint-header">
+      <span class="method-badge method-get">GET</span>
+      <div>
+        <div class="endpoint-path">/admin/audit-log</div>
+        <div class="endpoint-desc">Last 100 security audit log entries — admin role only</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-yes">🔒 JWT Required (role: admin)</span>
+        <span class="badge badge-cp">Control Point E — RBAC</span>
+      </div>
+      <p>The <code>require_admin</code> dependency first verifies the JWT, then checks <code>role == "admin"</code>. Non-admin users receive <code>403 Forbidden</code>.</p>
+      <h4>Events Logged</h4>
+      <table>
+        <tr><th>Event Type</th><th>When Triggered</th></tr>
+        <tr><td><code>REGISTER</code></td><td>New user registered</td></tr>
+        <tr><td><code>LOGIN_STEP1</code></td><td>Password verified successfully</td></tr>
+        <tr><td><code>LOGIN_FAIL</code></td><td>Wrong password attempt</td></tr>
+        <tr><td><code>ACCOUNT_LOCKED</code></td><td>5 failed attempts — account locked</td></tr>
+        <tr><td><code>LOGIN_SUCCESS</code></td><td>Full 2FA login completed</td></tr>
+        <tr><td><code>MFA_SETUP</code></td><td>TOTP secret generated</td></tr>
+        <tr><td><code>MFA_ENABLED</code></td><td>MFA confirmed and enabled</td></tr>
+        <tr><td><code>MFA_FAIL</code></td><td>Invalid TOTP code submitted</td></tr>
+        <tr><td><code>TRANSFER</code></td><td>Money transferred between accounts</td></tr>
+      </table>
+      <p><strong>Why audit logging?</strong> Required for forensic investigation, regulatory compliance (FCA, PCI-DSS), and intrusion detection (patterns of LOGIN_FAIL indicate brute-force).</p>
+      <h4>Error Responses</h4>
+      <table>
+        <tr><th>Code</th><th>Reason</th></tr>
+        <tr><td><span class="status-err">401</span></td><td>No or invalid JWT</td></tr>
+        <tr><td><span class="status-err">403</span></td><td>JWT valid but role ≠ "admin"</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 12. Dev Token -->
+  <div class="endpoint-card" id="ep-dev-token">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/dev/get-token</div>
+        <div class="endpoint-desc">DEV ONLY — Issue JWT without requiring MFA step</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth</span>
+        <span class="badge badge-warn">⚠️ Remove before production</span>
+      </div>
+      <p>Verifies email + password (Argon2id), then immediately issues a JWT without requiring the TOTP step. Useful for testing protected endpoints during development when MFA hasn't been set up yet.</p>
+      <div class="alert alert-warn"><span class="alert-icon">⚠️</span>This endpoint bypasses MFA entirely. It must be removed or disabled before any production or public deployment.</div>
+      <div class="code-label">Request Body</div>
+      <pre>{ "email": "alice@securebank.com", "password": "SecurePass123!" }</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{ "access_token": "eyJhbGci...", "token_type": "bearer", "user_id": 1 }</pre>
+    </div>
+  </div>
+
+  <!-- 13. Dev Setup MFA -->
+  <div class="endpoint-card" id="ep-dev-mfa">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <div>
+        <div class="endpoint-path">/dev/setup-mfa</div>
+        <div class="endpoint-desc">DEV ONLY — Set up MFA without needing a prior JWT</div>
+      </div>
+    </div>
+    <div class="endpoint-body">
+      <div class="badges">
+        <span class="badge badge-auth-no">🔓 No Auth</span>
+        <span class="badge badge-warn">⚠️ Remove before production</span>
+      </div>
+      <p>Verifies email + password, generates a TOTP secret, encrypts and stores it, returns both the QR code and the plaintext secret (for manual entry in an authenticator app). After scanning, call <code>/mfa/confirm</code>.</p>
+      <div class="code-label">Request Body</div>
+      <pre>{ "email": "alice@securebank.com", "password": "SecurePass123!" }</pre>
+      <div class="code-label">Response ✅</div>
+      <pre>{
+  "user_id": 1,
+  "qr_code_base64": "iVBORw0KGgoAAAA...",
+  "secret_plaintext": "JBSWY3DPEBLW64TMMQ======",
+  "next_step": "Scan QR or enter secret in Google Authenticator, then POST /mfa/confirm"
+}</pre>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- DB Schema -->
+  <h2 id="schema">🗄️ Database Schema</h2>
+  <pre>CREATE TABLE users (
+  id                    INT AUTO_INCREMENT PRIMARY KEY,
+  email                 VARCHAR(255) UNIQUE NOT NULL,
+  password_hash         TEXT NOT NULL,                  -- Argon2id
+  mfa_secret_encrypted  TEXT,                           -- AES-256-GCM encrypted TOTP secret
+  mfa_enabled           BOOLEAN DEFAULT FALSE,
+  role                  VARCHAR(20) DEFAULT 'customer',
+  failed_logins         INT DEFAULT 0,
+  locked_until          DATETIME NULL,                  -- lockout timestamp
+  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE accounts (
+  id                      INT AUTO_INCREMENT PRIMARY KEY,
+  user_id                 INT NOT NULL,
+  account_number          VARCHAR(20) UNIQUE NOT NULL,  -- SB + 10 digits
+  balance_cents           BIGINT NOT NULL DEFAULT 0,    -- stored as integer cents
+  national_id_encrypted   TEXT,                         -- AES-256-GCM encrypted
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE transactions (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  from_account  INT,
+  to_account    INT,
+  amount_cents  BIGINT NOT NULL,
+  signature     TEXT NOT NULL,   -- ECDSA P-256 signature (base64)
+  hmac_tag      TEXT NOT NULL,   -- HMAC-SHA256 integrity tag (base64)
+  status        VARCHAR(20) DEFAULT 'completed',
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE audit_log (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  event_type  VARCHAR(50) NOT NULL,
+  user_id     INT,
+  detail      TEXT,
+  ip_address  VARCHAR(45),       -- IPv4 or IPv6
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);</pre>
+
+  <!-- Key Files -->
+  <h2 id="files">📁 Key Files</h2>
+  <table>
+    <tr><th>File</th><th>Purpose</th></tr>
+    <tr><td><code>backend/main.py</code></td><td>All FastAPI routes + middleware (CORS, rate limiting)</td></tr>
+    <tr><td><code>backend/db.py</code></td><td>MySQL connection pool (reads from .env)</td></tr>
+    <tr><td><code>backend/security/password.py</code></td><td>Argon2id hash + verify</td></tr>
+    <tr><td><code>backend/security/jwt_auth.py</code></td><td>RS256 JWT issue, verify, require_auth dependency</td></tr>
+    <tr><td><code>backend/security/mfa.py</code></td><td>TOTP secret gen, QR code, verify</td></tr>
+    <tr><td><code>backend/security/field_crypto.py</code></td><td>AES-256-GCM encrypt + decrypt</td></tr>
+    <tr><td><code>backend/security/tx_signing.py</code></td><td>ECDSA sign + HMAC compute + verify</td></tr>
+    <tr><td><code>backend/schema.sql</code></td><td>MySQL DDL + least-privilege users</td></tr>
+    <tr><td><code>backend/.env</code></td><td>DB credentials + AES/HMAC keys (never commit!)</td></tr>
+    <tr><td><code>backend/keys/private.pem</code></td><td>RSA 2048 private key — JWT signing</td></tr>
+    <tr><td><code>backend/keys/public.pem</code></td><td>RSA 2048 public key — JWT verification</td></tr>
+    <tr><td><code>backend/keys/ec_private.pem</code></td><td>ECDSA P-256 private key — tx signing</td></tr>
+    <tr><td><code>backend/keys/ec_public.pem</code></td><td>ECDSA P-256 public key — tx verification</td></tr>
+    <tr><td><code>backend/keys/server.key / server.cert</code></td><td>Self-signed TLS keypair (local dev)</td></tr>
+    <tr><td><code>frontend/src/api.js</code></td><td>Axios API client with JWT interceptor</td></tr>
+    <tr><td><code>frontend/src/Login.jsx</code></td><td>2-step login component</td></tr>
+    <tr><td><code>frontend/src/Dashboard.jsx</code></td><td>Balance + transfer + transaction history</td></tr>
+  </table>
+
+  <div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:0.8rem;text-align:center;">
+    SecureBank API Documentation — CW2 Banking Prototype — FastAPI + MySQL + React
+  </div>
+</main>
+
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { login, register, verifyMfa, confirmMfa, setupMfa, setToken } from './api';
+import { login, register, verifyMfa, confirmMfa, setupMfa, setupInitialMfa, setToken } from './api';
 
 /**
  * Login component — handles:
@@ -49,8 +49,12 @@ export default function Login({ onSuccess }) {
         }
       }
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Something went wrong';
-      setError(msg);
+      if (err.message === 'Network Error') {
+        setError('Network Error: The backend might be offline or your browser is blocking the self-signed certificate. Please open https://localhost:8443 in a new tab and click "Proceed", then return here.');
+      } else {
+        const msg = err.response?.data?.detail || 'Something went wrong';
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,12 +66,12 @@ export default function Login({ onSuccess }) {
     setLoading(true);
     try {
       // Issue a temporary token-less setup by calling a special setup endpoint
-      // We pass user_id via the confirm endpoint
-      // For this flow: simulate by getting QR from setup
-      // In a real app you'd have a short-lived setup token here
+      const res = await setupInitialMfa(email, password);
       setError('');
       setMfaPhase('setup');
-      setSuccess('Contact admin to enable MFA, or register with MFA-enabled account.');
+      setQrCode(res.data.qr_code_base64);
+      setUserId(res.data.user_id);
+      setSuccess('Scan the QR code with Google Authenticator and enter the code below.');
       setLoading(false);
     } catch (err) {
       setError(err.response?.data?.detail || 'MFA setup failed');
@@ -208,11 +212,19 @@ export default function Login({ onSuccess }) {
         {step === 2 && mfaPhase === 'setup-needed' && (
           <>
             <div className="alert alert-info">
-              Your account doesn't have MFA configured yet. Please ask an admin to set up MFA for your account, or log in using an account with MFA enabled.
+              Your account doesn't have Two-Factor Authentication configured yet. You must set it up before you can log in.
             </div>
+            <button
+              className="btn btn-primary btn-full"
+              onClick={handleMfaSetupRequest}
+              disabled={loading}
+            >
+              {loading ? <span className="spinner" /> : 'Set up MFA now'}
+            </button>
             <button
               className="btn btn-ghost btn-full"
               onClick={() => { setStep(1); clearMessages(); }}
+              style={{ marginTop: 8 }}
             >
               ← Back to Login
             </button>

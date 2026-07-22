@@ -16,6 +16,7 @@ import random
 import string
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from middleware.ids_monitor import IDSMonitorMiddleware
 from pydantic import BaseModel, EmailStr
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -25,6 +26,7 @@ from db import get_connection
 from security.password import hash_password, verify_password
 from security.jwt_auth import issue_jwt, require_auth, require_admin
 from security.mfa import generate_mfa_secret, get_qr_code_base64, verify_totp
+from security.mail import send_transfer_confirmation
 from security.field_crypto import encrypt_field, decrypt_field
 from security.tx_signing import sign_transaction, compute_hmac, verify_transaction_signature
 
@@ -39,6 +41,9 @@ app = FastAPI(
     description="Secure banking API demonstrating CW2 control points A–L",
     version="1.0.0"
 )
+
+# System-level requirement: Simulated IDS/Firewall
+app.add_middleware(IDSMonitorMiddleware)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -147,9 +152,12 @@ def register(req: RegisterRequest, request: Request):
         # Create bank account
         account_number = _generate_account_number()
         national_id_enc = encrypt_field(req.national_id) if req.national_id else None
+        # NOTE (System-Level Requirement): Removed the prototype £1000 welcome balance.
+        # In a real banking system, money cannot be created out of thin air.
+        # It must enter via a verifiable deposit/funding transaction to maintain ledger integrity.
         cursor.execute(
             "INSERT INTO accounts (user_id, account_number, balance_cents, national_id_encrypted) VALUES (%s,%s,%s,%s)",
-            (user_id, account_number, 100000, national_id_enc)  # £1000 welcome balance (in cents)
+            (user_id, account_number, 0, national_id_enc)
         )
         conn.commit()
 
@@ -159,7 +167,7 @@ def register(req: RegisterRequest, request: Request):
         return {
             "message": "Registration successful",
             "account_number": account_number,
-            "welcome_balance": "£1000.00"
+            "welcome_balance": "£0.00"
         }
     finally:
         cursor.close()
@@ -275,6 +283,7 @@ def mfa_setup(request: Request, auth: dict = Depends(require_auth)):
 # --- MFA Confirm (enable after first scan) ----------------------------------
 
 @app.post("/mfa/confirm")
+@limiter.limit("5/minute")
 def mfa_confirm(req: MfaVerifyRequest, request: Request):
     """
     Confirm MFA setup by verifying the first TOTP code.
@@ -315,6 +324,7 @@ class MfaConfirmAuthRequest(BaseModel):
 
 
 @app.post("/mfa/confirm-auth")
+@limiter.limit("5/minute")
 def mfa_confirm_auth(req: MfaConfirmAuthRequest, request: Request, auth: dict = Depends(require_auth)):
     """
     Confirm MFA setup for an already-authenticated user (Dashboard flow).
@@ -493,6 +503,12 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         amount_display = f"£{req.amount_cents / 100:.2f}"
         _audit("TRANSFER", user_id, f"Sent {amount_display} to {req.to_account_number}", ip)
 
+        # Get sender email for notification
+        cursor.execute("SELECT email FROM users WHERE id=%s", (user_id,))
+        user_row = cursor.fetchone()
+        if user_row and user_row.get("email"):
+            send_transfer_confirmation(user_row["email"], amount_display, req.to_account_number)
+
         return {
             "message": "Transfer successful",
             "amount": amount_display,
@@ -579,8 +595,12 @@ class DevTokenRequest(BaseModel):
     email: str
     password: str
 
+def require_not_production():
+    import os
+    if os.getenv("ENVIRONMENT") == "production":
+        raise HTTPException(status_code=404, detail="Not Found")
 
-@app.post("/dev/get-token", tags=["dev"])
+@app.post("/dev/get-token", tags=["dev"], dependencies=[Depends(require_not_production)])
 def dev_get_token(req: DevTokenRequest):
     """
     DEV ONLY — Issues a JWT token after verifying password, WITHOUT requiring MFA.
@@ -606,7 +626,7 @@ class DevSetupMfaRequest(BaseModel):
     password: str
 
 
-@app.post("/dev/setup-mfa", tags=["dev"])
+@app.post("/dev/setup-mfa", tags=["dev"], dependencies=[Depends(require_not_production)])
 def dev_setup_mfa(req: DevSetupMfaRequest):
     """
     DEV ONLY — Generates a TOTP secret and returns the QR code + plain secret
@@ -649,11 +669,20 @@ def dev_setup_mfa(req: DevSetupMfaRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8443,
-        ssl_keyfile="keys/server.key",
-        ssl_certfile="keys/server.cert",
-        reload=True
-    )
+    import ssl
+
+    # CW2 Requirement: Protocol Level (Protocol Tightening)
+    # Why TLS 1.3? TLS 1.3 enforces Perfect Forward Secrecy (PFS), meaning that even if 
+    # the server's private key is compromised in the future, past intercepted traffic 
+    # cannot be decrypted. It also removes obsolete, vulnerable cryptographic primitives.
+
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(certfile="keys/server.cert", keyfile="keys/server.key")
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+
+    config = uvicorn.Config("main:app", host="0.0.0.0", port=8443, reload=True)
+    # Apply the strict TLS 1.3 context manually since uvicorn.run doesn't expose minimum_version
+    server = uvicorn.Server(config)
+    config.ssl = ssl_context
+    
+    server.run()

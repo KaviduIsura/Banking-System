@@ -33,6 +33,9 @@ export const verifyMfa = (userId, code) =>
 export const setupMfa = () =>
   api.post('/mfa/setup');
 
+export const setupInitialMfa = (email, password) =>
+  api.post('/dev/setup-mfa', { email, password });
+
 export const confirmMfa = (userId, code) =>
   api.post('/mfa/confirm', { user_id: userId, code });
 
