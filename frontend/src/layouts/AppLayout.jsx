@@ -49,12 +49,16 @@ export default function AppLayout() {
       {/* Sidebar (Desktop) / Bottom Nav (Mobile) */}
       <nav className="app-sidebar">
         <div className="sidebar-header">
-          <Logo size={32} showWordmark={true} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem' }}>
+            <span style={{ color: 'var(--teal)' }}>❖</span> SecureBank
+          </div>
         </div>
         
         <div className="sidebar-nav">
+          <div className="nav-label-group">Main</div>
+          
           {user.role === 'admin' ? (
-            <NavLink to="/admin/audit-log" className={({ isActive }) => isActive ? 'nav-item active admin-nav' : 'nav-item admin-nav'}>
+            <NavLink to="/admin/audit-log" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
               <span className="nav-icon">🛡️</span>
               <span className="nav-label">Audit Log</span>
             </NavLink>
@@ -76,29 +80,42 @@ export default function AppLayout() {
               </NavLink>
             </>
           )}
+
+          <div className="nav-label-group" style={{ marginTop: '2rem' }}>Support</div>
+          <a href="#" onClick={handleLogout} className="nav-item">
+            <span className="nav-icon">🚪</span>
+            <span className="nav-label">Sign out</span>
+          </a>
         </div>
         
         <div className="sidebar-footer">
           <div className="user-info">
-            <span className="user-role">{user.role}</span>
-            <span className="user-id">User ID: {user.id}</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', marginBottom: '0.25rem' }}>Sign in as</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="avatar-chip" style={{ width: '32px', height: '32px', fontSize: '0.875rem' }}>
+                {user.role === 'admin' ? 'A' : 'U'}
+              </div>
+              <div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{user.role === 'admin' ? 'Administrator' : 'Customer'}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>ID: {user.id}</div>
+              </div>
+            </div>
           </div>
-          <button onClick={handleLogout} className="btn-logout">
-            Sign out
-          </button>
         </div>
       </nav>
 
       {/* Main Content Area */}
       <main className="app-main">
         <header className="app-header">
-          <div className="header-title">
-             {/* Title will be set by child pages or we can leave it blank */}
+          <div className="header-breadcrumbs">
+             Main <span>&gt; {location.pathname.replace('/', '').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
           </div>
           <div className="header-actions">
-             <div className="bell-icon">🔔</div>
+             <div className="action-pill">
+               <span style={{ color: 'var(--teal)' }}>●</span> Status: Active
+             </div>
              <div className="avatar-chip">
-               <span>U</span>
+               🔔
              </div>
           </div>
         </header>

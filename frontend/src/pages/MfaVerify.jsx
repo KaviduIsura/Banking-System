@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link, Navigate } from 'react-router-dom';
 import { verifyMfa } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -17,17 +17,12 @@ export default function MfaVerify() {
     return <Navigate to="/login" replace />;
   }
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    if (code.length !== 6) {
-      toast.error('Please enter a 6-digit code');
-      return;
-    }
-
+  const submitCode = async (mfaCode) => {
+    if (mfaCode.length !== 6) return;
     setLoading(true);
     
     try {
-      const res = await verifyMfa(state.userId, code);
+      const res = await verifyMfa(state.userId, mfaCode);
       login(res.data.access_token);
       toast.success('Login successful!');
       navigate('/dashboard');
@@ -37,6 +32,17 @@ export default function MfaVerify() {
       setLoading(false);
     }
   };
+
+  const handleVerify = (e) => {
+    e.preventDefault();
+    submitCode(code);
+  };
+
+  useEffect(() => {
+    if (code.length === 6) {
+      submitCode(code);
+    }
+  }, [code]);
 
   return (
     <div>

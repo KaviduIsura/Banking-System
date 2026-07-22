@@ -58,14 +58,14 @@ export default function AdminAuditLog() {
 
   const getEventColor = (type) => {
     if (type.includes('FAIL') || type.includes('ERROR') || type.includes('FLAG')) return 'var(--danger)';
-    if (type.includes('SUCCESS') || type.includes('REGISTER')) return 'var(--success)';
-    return 'var(--gold)';
+    if (type.includes('SUCCESS') || type.includes('REGISTER')) return 'var(--teal)';
+    return 'var(--ink-soft)';
   };
 
   const getEventBg = (type) => {
     if (type.includes('FAIL') || type.includes('ERROR') || type.includes('FLAG')) return 'var(--danger-tint)';
-    if (type.includes('SUCCESS') || type.includes('REGISTER')) return 'var(--success-tint)';
-    return 'var(--gold-soft)';
+    if (type.includes('SUCCESS') || type.includes('REGISTER')) return 'var(--teal-light)';
+    return '#E5E7EB';
   };
 
   const handleApprove = async (txId) => {
@@ -108,7 +108,7 @@ export default function AdminAuditLog() {
         </div>
       </div>
       
-      <div className="alert alert-info" style={{ backgroundColor: 'var(--ink)', color: 'var(--gold-soft)', border: 'none', marginBottom: '2rem' }}>
+      <div className="alert alert-info" style={{ backgroundColor: 'var(--teal-light)', color: 'var(--teal-dark)', border: 'none', marginBottom: '2rem' }}>
         <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>🛡️</span>
         <strong>Admin Restricted Zone:</strong> This audit log is cryptographically immutable. All system events are permanently recorded.
       </div>
@@ -116,10 +116,10 @@ export default function AdminAuditLog() {
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {[
-          { label: 'Events Today', value: stats.eventsToday },
+          { label: 'Events Today', value: stats.eventsToday, color: 'var(--teal)' },
           { label: 'Failed Logins', value: stats.failedLogins, color: 'var(--danger)' },
           { label: 'Accounts Locked', value: stats.accountsLocked, color: 'var(--danger)' },
-          { label: 'Flagged Requests', value: stats.flaggedRequests, color: 'var(--orange)' }
+          { label: 'Flagged Requests', value: stats.flaggedRequests, color: 'var(--accent-yellow)' }
         ].map(stat => (
           <div key={stat.label} className="card" style={{ padding: '1.5rem', marginBottom: 0 }}>
             <p style={{ color: 'var(--ink-soft)', fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>{stat.label}</p>
@@ -134,13 +134,13 @@ export default function AdminAuditLog() {
       {activeTab === 'audit' ? (
         <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: 'var(--sand)' }}>
+            <thead style={{ backgroundColor: '#F9FAFB' }}>
               <tr>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Time</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Event</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>User ID</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>IP Address</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Detail</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Time</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Event</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>User ID</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>IP Address</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Detail</th>
               </tr>
             </thead>
             <tbody>
@@ -150,7 +150,7 @@ export default function AdminAuditLog() {
                 <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>No audit logs found.</td></tr>
               ) : (
                 logs.map((log, i) => (
-                  <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? '1px solid var(--gold-line)' : 'none' }}>
+                  <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? '1px solid #E5E7EB' : 'none' }} className="hover-lift">
                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                       {formatDate(log.created_at)}
                     </td>
@@ -184,13 +184,13 @@ export default function AdminAuditLog() {
       ) : (
         <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: 'var(--sand)' }}>
+            <thead style={{ backgroundColor: '#F9FAFB' }}>
               <tr>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Time</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>From Account</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>To Account</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Amount</th>
-                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)', textAlign: 'right' }}>Actions</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Time</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>From Account</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>To Account</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Amount</th>
+                <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -200,7 +200,7 @@ export default function AdminAuditLog() {
                 <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>No pending transactions found.</td></tr>
               ) : (
                 pending.map((tx, i) => (
-                  <tr key={tx.id} style={{ borderBottom: i < pending.length - 1 ? '1px solid var(--gold-line)' : 'none' }}>
+                  <tr key={tx.id} style={{ borderBottom: i < pending.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                       {formatDate(tx.created_at)}
                     </td>

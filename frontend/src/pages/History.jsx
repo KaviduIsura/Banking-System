@@ -54,7 +54,7 @@ export default function History() {
         {/* Filters & Search */}
         <div style={{ 
           padding: '1.5rem', 
-          borderBottom: '1px solid var(--gold-line)',
+          borderBottom: '1px solid #E5E7EB',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -70,9 +70,9 @@ export default function History() {
                   padding: '0.5rem 1rem',
                   borderRadius: '99px',
                   border: '1px solid',
-                  borderColor: filter === f ? 'var(--orange)' : 'var(--gold-line)',
-                  backgroundColor: filter === f ? 'var(--orange-tint)' : 'transparent',
-                  color: filter === f ? 'var(--orange-deep)' : 'var(--ink-soft)',
+                  borderColor: filter === f ? 'var(--teal)' : '#E5E7EB',
+                  backgroundColor: filter === f ? 'var(--teal)' : 'transparent',
+                  color: filter === f ? '#FFFFFF' : 'var(--ink-soft)',
                   fontWeight: 700,
                   fontSize: '0.875rem',
                   cursor: 'pointer',
@@ -106,19 +106,19 @@ export default function History() {
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
+              <thead style={{ backgroundColor: '#F9FAFB' }}>
                 <tr>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Date</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Description</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Account</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)' }}>Type</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)', textAlign: 'right' }}>Amount</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid var(--gold-line)', textAlign: 'center' }}>Status</th>
+                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Date</th>
+                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Description</th>
+                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Account</th>
+                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Type</th>
+                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'right' }}>Amount</th>
+                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'center' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredData.map((tx, i) => (
-                  <tr key={tx.id} style={{ borderBottom: i < filteredData.length - 1 ? '1px solid var(--gold-line)' : 'none' }}>
+                  <tr key={tx.id} style={{ borderBottom: i < filteredData.length - 1 ? '1px solid #E5E7EB' : 'none' }} className="hover-lift">
                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                       {formatDate(tx.created_at)}
                     </td>
@@ -130,8 +130,8 @@ export default function History() {
                     </td>
                     <td style={{ padding: '1rem 1.5rem' }}>
                       <span style={{
-                        backgroundColor: tx.type === 'credit' ? 'var(--success-tint)' : 'var(--danger-tint)',
-                        color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)',
+                        backgroundColor: tx.type === 'credit' ? 'var(--teal-light)' : 'var(--danger-tint)',
+                        color: tx.type === 'credit' ? 'var(--teal)' : 'var(--danger)',
                         padding: '0.25rem 0.5rem',
                         borderRadius: '4px',
                         fontSize: '0.75rem',
@@ -141,7 +141,7 @@ export default function History() {
                         {tx.type}
                       </span>
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'right', color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)' }}>
+                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'right', color: tx.type === 'credit' ? 'var(--teal)' : 'var(--ink)' }}>
                       {tx.type === 'credit' ? '+' : '-'}{tx.amount_display}
                     </td>
                     <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>

@@ -63,6 +63,12 @@ export default function Transfer() {
     }
   };
 
+  useEffect(() => {
+    if (step === 3 && mfaCode.length === 6 && !loading) {
+      handleConfirm();
+    }
+  }, [mfaCode, step, loading]);
+
   const resetForm = () => {
     setToAccount('');
     setAmount('');
@@ -135,13 +141,14 @@ export default function Transfer() {
             </div>
             
             <div style={{ 
-              backgroundColor: 'var(--sand)', 
+              backgroundColor: 'var(--paper)', 
               padding: '1rem', 
               borderRadius: '8px',
               display: 'flex',
               gap: '1rem',
               alignItems: 'flex-start',
-              marginBottom: '1.5rem'
+              marginBottom: '1.5rem',
+              border: '1px solid #E5E7EB'
             }}>
               <span style={{ fontSize: '1.25rem' }}>🔒</span>
               <p style={{ fontSize: '0.875rem', color: 'var(--ink-soft)', margin: 0, lineHeight: 1.4 }}>
@@ -159,7 +166,7 @@ export default function Transfer() {
           <div>
             <h3 style={{ textAlign: 'center', marginBottom: '2rem' }}>Review Transfer</h3>
             
-            <div style={{ backgroundColor: 'var(--sand)', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
+            <div style={{ backgroundColor: 'var(--paper)', border: '1px solid #E5E7EB', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
               <p style={{ color: 'var(--ink-soft)', marginBottom: '0.5rem', fontWeight: 700 }}>Amount</p>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: '2.5rem', color: 'var(--ink)' }}>
                 £{parseFloat(amount).toFixed(2)}
@@ -167,16 +174,16 @@ export default function Transfer() {
             </div>
             
             <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.5rem' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>From</span>
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{accountNumber}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.5rem' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>To</span>
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{toAccount}</span>
               </div>
               {note && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.5rem' }}>
                   <span style={{ color: 'var(--ink-soft)' }}>Note</span>
                   <span>{note}</span>
                 </div>
@@ -247,8 +254,8 @@ export default function Transfer() {
           <div style={{ textAlign: 'center', padding: '2rem 0', animation: 'fadeIn 0.5s ease-out' }}>
             <div style={{ 
               width: '80px', height: '80px', borderRadius: '50%', 
-              backgroundColor: successData.status === 'pending_review' ? 'var(--gold-soft)' : 'var(--success-tint)', 
-              color: successData.status === 'pending_review' ? 'var(--gold)' : 'var(--success)', 
+              backgroundColor: successData.status === 'pending_review' ? 'var(--teal-light)' : 'var(--success-tint)', 
+              color: successData.status === 'pending_review' ? 'var(--teal)' : 'var(--success)', 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '2.5rem', margin: '0 auto 1.5rem',
               animation: 'pulse 2s infinite'

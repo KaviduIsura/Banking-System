@@ -73,166 +73,205 @@ export default function Dashboard() {
 
   return (
     <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
-      <h2 style={{ marginBottom: '2rem' }}>Welcome back</h2>
+      <h2 className="page-title">Overview</h2>
       
       {kycStatus !== 'verified' && (
-        <div className="card" style={{ 
-          backgroundColor: 'var(--gold-mute)', 
-          border: '1px solid var(--gold)', 
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          animation: 'pulse 3s infinite'
-        }}>
+        <div className="alert alert-error" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ margin: 0, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>⚠️</span> Verification Required
-            </h3>
-            <p style={{ margin: '0.5rem 0 0 0', color: 'var(--ink)' }}>
-              You must verify your identity before you can send money.
-            </p>
+            <strong>⚠️ Verification Required:</strong> You must verify your identity before you can send money.
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/verification')}>
+          <button className="btn btn-primary" onClick={() => navigate('/verification')} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}>
             Verify Now
           </button>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
         
-        {/* Hero Card */}
-        <div className="card" style={{ 
-          background: 'linear-gradient(135deg, var(--ink) 0%, #3a2b1c 100%)', 
-          color: 'var(--paper)',
-          border: 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between'
-        }}>
-          <div>
-            <p style={{ color: 'var(--gold-soft)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Available Balance
-            </p>
-            <div style={{ margin: '1rem 0' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', lineHeight: 1 }}>
-                £{main}
-              </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', opacity: 0.8 }}>
-                .{decimal}
+        {/* Left Column: Chart Mock & Flow */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', gridColumn: 'span 2' }}>
+          <div className="card" style={{ height: '320px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>Account Analytics</h3>
+                <p style={{ color: 'var(--ink-soft)', fontSize: '0.875rem' }}>Total Available Balance</p>
+              </div>
+              <div style={{ padding: '0.25rem 0.5rem', backgroundColor: '#F3F4F6', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
+                Filter ⌄
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', marginBottom: '2rem' }}>
+              <span style={{ fontSize: '2.5rem', fontWeight: 800 }}>£{main}.{decimal}</span>
+              <span style={{ color: 'var(--teal)', backgroundColor: 'var(--teal-light)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                +14% this month
               </span>
             </div>
-            <p style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>
-              A/C: {accountNumber || 'SB-XXXXXXXX'}
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <button className="btn btn-primary" onClick={() => navigate('/transfer')}>Send money</button>
-            <button className="btn btn-ghost" style={{ color: 'var(--paper)', borderColor: 'rgba(255,255,255,0.2)' }}>Account details</button>
-          </div>
-        </div>
-
-        {/* Profile Card */}
-        <div className="card">
-          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--gold)' }}>👤</span> Account Details
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'var(--ink-soft)' }}>Full Name</span>
-              <span style={{ fontWeight: 600 }}>{profile?.full_name || 'N/A'}</span>
-            </div>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'var(--ink-soft)' }}>Date of Birth</span>
-              <span style={{ fontWeight: 600 }}>{profile?.date_of_birth || 'N/A'}</span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'var(--ink-soft)' }}>Phone</span>
-              <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{profile?.phone_number || 'N/A'}</span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--gold-line)', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'var(--ink-soft)' }}>Address</span>
-              <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '150px' }}>{profile?.address || 'N/A'}</span>
-            </div>
-            
-            <button 
-              className="btn btn-ghost" 
-              style={{ color: 'var(--danger)', borderColor: 'var(--danger-tint)', marginTop: '0.5rem' }}
-              onClick={handleFreeze}
-            >
-              Freeze Account
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--gold-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0 }}>Recent Activity</h3>
-          <Link to="/history" style={{ fontSize: '0.875rem' }}>View all →</Link>
-        </div>
-        
-        {transactions.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-soft)' }}>
-            No recent activity to display.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {transactions.map((tx, i) => (
-              <div key={tx.id} style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                padding: '1.25rem 1.5rem',
-                borderBottom: i < transactions.length - 1 ? '1px solid var(--gold-line)' : 'none'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ 
-                    width: '40px', height: '40px', borderRadius: '50%', 
-                    backgroundColor: tx.type === 'credit' ? 'var(--success-tint)' : 'var(--danger-tint)',
-                    color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 'bold', fontSize: '1.2rem'
-                  }}>
-                    {tx.type === 'credit' ? '↙' : '↗'}
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: 700 }}>{tx.type === 'credit' ? `From ${tx.from_account}` : `To ${tx.to_account}`}</p>
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
-                      {formatDate(tx.created_at)}
-                    </p>
-                  </div>
+            {/* CSS Mock Chart */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 1rem', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderTop: '1px dashed #E5E7EB', borderBottom: '1px dashed #E5E7EB', zIndex: 0, opacity: 0.5 }}></div>
+              {[40, 70, 45, 90, 60, 80, 50, 75, 40].map((h, i) => (
+                <div key={i} style={{ 
+                  width: '12%', 
+                  height: `${h}%`, 
+                  backgroundColor: i === 3 ? 'var(--teal)' : 'var(--teal-light)',
+                  borderRadius: '4px 4px 0 0',
+                  zIndex: 1,
+                  position: 'relative'
+                }}>
+                  {i === 3 && (
+                    <div style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#FFF', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', fontWeight: 600 }}>
+                      Active
+                    </div>
+                  )}
                 </div>
-                
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ 
-                    fontFamily: 'var(--font-mono)', 
-                    fontWeight: 600,
-                    color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)',
-                    fontSize: '1.125rem'
-                  }}>
-                    {tx.type === 'credit' ? '+' : '-'}{tx.amount_display}
-                  </p>
-                  <span style={{ 
-                    backgroundColor: 'var(--success-tint)', 
-                    color: 'var(--success)', 
-                    padding: '0.15rem 0.5rem', 
-                    borderRadius: '99px', 
-                    fontSize: '0.7rem', 
-                    fontWeight: 800 
-                  }}>
-                    COMPLETED
-                  </span>
+              ))}
+            </div>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="card widget-teal" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⭐</div>
+                <span style={{ fontSize: '1.25rem' }}>•••</span>
+              </div>
+              <div style={{ marginTop: '2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.25rem' }}>{kycStatus === 'verified' ? '100%' : '50%'}</div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem' }}>Account Setup</div>
+              </div>
+            </div>
+            
+            <div className="card widget-teal-light" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FFF', color: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📈</div>
+                <span style={{ fontSize: '1.25rem', color: 'var(--teal-dark)' }}>•••</span>
+              </div>
+              <div style={{ marginTop: '2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--teal-dark)' }}>{transactions.length}</div>
+                <div style={{ color: 'var(--teal-dark)', fontSize: '0.875rem', opacity: 0.8 }}>Recent Transactions</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Account Details */}
+          <div className="card" style={{ marginTop: 'auto' }}>
+            <h3 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem' }}>
+              <span style={{ color: 'var(--teal)' }}>👤</span> Account Profile
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</span>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginTop: '0.25rem' }}>{profile?.full_name || 'N/A'}</div>
+              </div>
+              <div>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date of Birth</span>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginTop: '0.25rem' }}>{profile?.date_of_birth || 'N/A'}</div>
+              </div>
+              <div>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</span>
+                <div style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: '0.875rem', marginTop: '0.25rem' }}>{profile?.phone_number || 'N/A'}</div>
+              </div>
+              <div>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Address</span>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginTop: '0.25rem' }}>{profile?.address || 'N/A'}</div>
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '1.5rem', borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
+              <button 
+                className="btn btn-ghost" 
+                style={{ color: 'var(--danger)', borderColor: 'transparent', padding: '0.5rem 0', fontSize: '0.875rem' }}
+                onClick={handleFreeze}
+              >
+                ⚠️ Freeze Account
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Card & Operations */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Credit Card Widget */}
+          <div className="card widget-dark" style={{ padding: '1.5rem 1.5rem 2rem', border: 'none', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+              <span style={{ fontSize: '1.5rem', fontWeight: 800 }}>£ {main}.{decimal}</span>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>SecureBank</span>
+            </div>
+            
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.125rem', letterSpacing: '0.15em', marginBottom: '2rem', color: 'rgba(255,255,255,0.9)' }}>
+              •••• •••• •••• {accountNumber.slice(-4) || '1234'}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>
+                  {profile?.full_name || 'Customer Name'}
                 </div>
               </div>
-            ))}
+              <div style={{ display: 'flex' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#EB001B', position: 'relative', zIndex: 2 }}></div>
+                <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#F79E1B', marginLeft: '-12px', position: 'relative', zIndex: 1 }}></div>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Recent Operations */}
+          <div className="card" style={{ flex: 1, padding: '1.5rem 0 0 0' }}>
+            <h3 style={{ fontSize: '1rem', padding: '0 1.5rem 1rem', borderBottom: '1px solid #F3F4F6', color: 'var(--teal)' }}>Recent Operations</h3>
+            
+            <div style={{ padding: '0.5rem 0' }}>
+              {transactions.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-soft)' }}>
+                  No recent activity
+                </div>
+              ) : (
+                transactions.map((tx, i) => (
+                  <div key={tx.id} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '0.75rem 1.5rem',
+                    transition: 'background-color 0.2s',
+                    cursor: 'pointer'
+                  }} className="hover-lift">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ 
+                        width: '36px', height: '36px', borderRadius: '50%', 
+                        backgroundColor: tx.type === 'credit' ? '#E0F2FE' : '#FEE2E2',
+                        color: tx.type === 'credit' ? '#0369A1' : '#B91C1C',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 'bold', fontSize: '1rem'
+                      }}>
+                        {tx.type === 'credit' ? '↙' : '↗'}
+                      </div>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{tx.type === 'credit' ? `Transfer from ${tx.from_account}` : `Transfer to ${tx.to_account}`}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
+                          {formatDate(tx.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div style={{ 
+                      fontWeight: 600,
+                      color: tx.type === 'credit' ? 'var(--teal)' : 'var(--ink)',
+                      fontSize: '0.875rem'
+                    }}>
+                      {tx.type === 'credit' ? '+' : '-'}${tx.amount_display}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div style={{ padding: '1rem 1.5rem', textAlign: 'center', borderTop: '1px solid #F3F4F6' }}>
+              <Link to="/history" style={{ fontSize: '0.875rem', color: 'var(--ink-soft)' }}>View all operations</Link>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );
