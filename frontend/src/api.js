@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // NOTE: Accept the self-signed cert warning by visiting https://localhost:8443 once in your browser
 const api = axios.create({
-  baseURL: 'https://localhost:8443',
+  baseURL: import.meta.env.VITE_API_URL || 'https://localhost:8443',
   headers: { 'Content-Type': 'application/json' },
 });
 
