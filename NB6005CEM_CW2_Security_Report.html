@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>NB6005CEM CW2 – SecureBank Security Implementation Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      line-height: 1.9;
+      color: #111;
+      background: #e8e8e8;
+    }
+
+    /* ── PRINT BUTTON (screen only) ── */
+    .print-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: #1a3a6b; color: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+      padding: 10px 20px;
+      font-family: Arial, sans-serif; font-size: 13px;
+    }
+    .print-bar button {
+      background: #fff; color: #1a3a6b;
+      border: none; border-radius: 4px;
+      padding: 6px 20px; font-weight: bold; font-size: 13px; cursor: pointer;
+    }
+    .print-bar button:hover { background: #dce8ff; }
+
+    /* ── PAGE WRAPPER ── */
+    .page-wrap { margin-top: 52px; }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      margin: 18px auto;
+      padding: 20mm 22mm 20mm 28mm;
+      box-shadow: 0 4px 28px rgba(0,0,0,.18);
+      position: relative;
+    }
+
+    /* ── COVER PAGE ── */
+    .cover-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 257mm;
+      text-align: center;
+    }
+
+    .logo-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    /* SVG LOGOS */
+    .logo-kic svg, .logo-nibm svg { display: block; }
+
+    .logo-divider {
+      height: 70px; width: 2px; background: #ccc;
+    }
+
+    .cover-institution {
+      font-size: 11pt;
+      color: #333;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .cover-rule {
+      width: 100%;
+      border: none;
+      border-top: 2px solid #1a3a6b;
+      margin: 18px 0;
+    }
+
+    .cover-tag {
+      font-size: 11pt;
+      color: #555;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .cover-title {
+      font-size: 18pt;
+      font-weight: bold;
+      color: #1a3a6b;
+      line-height: 1.3;
+      margin: 10px 0 6px;
+    }
+
+    .cover-subtitle {
+      font-size: 13pt;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    .cover-meta {
+      font-size: 11pt;
+      line-height: 2;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .cover-meta strong { color: #1a3a6b; }
+
+    .cover-address {
+      font-size: 10pt;
+      color: #555;
+      line-height: 1.7;
+      margin-top: 8px;
+    }
+
+    .cover-footer {
+      font-size: 9.5pt;
+      color: #888;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* ── TOC PAGE ── */
+    .toc-title {
+      font-size: 15pt;
+      font-weight: bold;
+      text-align: center;
+      color: #1a3a6b;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #1a3a6b;
+    }
+    .toc-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 5px 0;
+      border-bottom: 1px dotted #ccc;
+      font-size: 11.5pt;
+    }
+    .toc-entry.sub { padding-left: 24px; font-size: 11pt; color: #333; }
+    .toc-entry.sub2 { padding-left: 48px; font-size: 10.5pt; color: #555; }
+    .toc-section { flex: 1; }
+    .toc-page { min-width: 28px; text-align: right; color: #1a3a6b; font-weight: bold; }
+    .toc-note {
+      margin-top: 16px;
+      font-size: 9pt;
+      color: #888;
+      font-style: italic;
+      border-top: 1px solid #eee;
+      padding-top: 8px;
+    }
+
+    /* ── BODY STYLES ── */
+    h1 { font-size: 16pt; font-weight: bold; text-align: center; margin-bottom: 4px; }
+    h2 {
+      font-size: 13pt; font-weight: bold; margin-top: 28px; margin-bottom: 8px;
+      border-bottom: 1.5px solid #1a3a6b; padding-bottom: 4px; color: #1a3a6b;
+    }
+    h3 { font-size: 12pt; font-weight: bold; margin-top: 18px; margin-bottom: 4px; }
+    h4 { font-size: 11pt; font-weight: bold; margin-top: 14px; margin-bottom: 3px; font-style: italic; }
+
+    p { margin: 6px 0 10px; text-align: justify; }
+    ul, ol { margin: 6px 0 10px 22px; }
+    li { margin-bottom: 5px; }
+
+    .abstract-box {
+      border: 1px solid #bbb;
+      padding: 14px 18px;
+      margin: 18px 0;
+      background: #f7f8fb;
+    }
+    .abstract-box h3 { margin-top: 0; text-align: center; font-style: italic; color: #1a3a6b; }
+
+    code {
+      font-family: "Courier New", monospace; font-size: 9.5pt;
+      background: #f2f2f2; padding: 1px 5px; border-radius: 2px;
+    }
+    pre {
+      font-family: "Courier New", monospace; font-size: 9pt;
+      background: #f5f5f5; border-left: 3px solid #1a3a6b;
+      padding: 10px 14px; margin: 10px 0;
+      white-space: pre-wrap; word-break: break-all; line-height: 1.5;
+    }
+
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 10.5pt; }
+    th { background: #1a3a6b; color: #fff; padding: 7px 9px; text-align: left; font-weight: bold; }
+    td { padding: 6px 9px; border: 1px solid #bbb; vertical-align: top; }
+    tr:nth-child(even) td { background: #f4f6fb; }
+    caption { font-size: 10pt; font-style: italic; margin-bottom: 5px; text-align: left; color: #444; }
+
+    .cp {
+      display: inline-block; background: #1a3a6b; color: #fff;
+      font-size: 8pt; padding: 1px 7px; border-radius: 3px;
+      margin-left: 5px; font-family: Arial, sans-serif; vertical-align: middle;
+    }
+
+    .reference-list p { margin: 3px 0; font-size: 10.5pt; line-height: 1.7; }
+
+    .section-break { page-break-before: always; }
+
+    /* ── ARCHITECTURE DIAGRAM ── */
+    .arch-wrap {
+      margin: 18px 0;
+      border: 1px solid #ccc;
+      background: #fafbff;
+      padding: 14px;
+      border-radius: 4px;
+    }
+    .arch-title {
+      text-align: center;
+      font-size: 10.5pt;
+      font-style: italic;
+      color: #444;
+      margin-top: 8px;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: #fff; }
+      .print-bar { display: none; }
+      .page-wrap { margin-top: 0; }
+      .page { margin: 0; box-shadow: none; padding: 18mm 20mm 18mm 24mm; }
+      .section-break { page-break-before: always; }
+      h2 { page-break-after: avoid; }
+      table { page-break-inside: avoid; }
+      .arch-wrap { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ PRINT BAR ═══════════════════ -->
+<div class="print-bar">
+  <span>📄 NB6005CEM CW2 — SecureBank Security Report</span>
+  <button onclick="window.print()">⬇ Save / Print as PDF</button>
+  <span style="font-size:11px; opacity:.8;">Browser Print → Destination: Save as PDF → Save</span>
+</div>
+
+<div class="page-wrap">
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 1 — COVER PAGE (KIC + NIBM Format)
+══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cover-page">
+
+    <!-- LOGOS -->
+    <div>
+      <div class="logo-bar">
+
+        <!-- KIC LOGO (SVG) -->
+        <div class="logo-kic">
+          <svg width="110" height="80" viewBox="0 0 110 80" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="110" height="80" rx="6" fill="#0a2e5c"/>
+            <text x="55" y="30" font-family="Arial" font-size="11" font-weight="bold"
+                  fill="#ffffff" text-anchor="middle">KANDY</text>
+            <text x="55" y="44" font-family="Arial" font-size="11" font-weight="bold"
+                  fill="#ffffff" text-anchor="middle">INNOVATION</text>
+            <text x="55" y="58" font-family="Arial" font-size="11" font-weight="bold"
+                  fill="#ffffff" text-anchor="middle">CENTRE</text>
+            <rect x="10" y="64" width="90" height="3" rx="1" fill="#f4b942"/>
+            <text x="55" y="76" font-family="Arial" font-size="8" fill="#f4b942"
+                  text-anchor="middle" font-style="italic">KIC</text>
+          </svg>
+        </div>
+
+        <div class="logo-divider"></div>
+
+        <!-- NIBM LOGO (SVG) -->
+        <div class="logo-nibm">
+          <svg width="130" height="80" viewBox="0 0 130 80" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="130" height="80" rx="6" fill="#006633"/>
+            <text x="65" y="22" font-family="Arial" font-size="9" font-weight="bold"
+                  fill="#ffffff" text-anchor="middle">NATIONAL INSTITUTE</text>
+            <text x="65" y="35" font-family="Arial" font-size="9" font-weight="bold"
+                  fill="#ffffff" text-anchor="middle">OF BUSINESS</text>
+            <text x="65" y="48" font-family="Arial" font-size="9" font-weight="bold"
+                  fill="#ffffff" text-anchor="middle">MANAGEMENT</text>
+            <rect x="10" y="55" width="110" height="2.5" rx="1" fill="#f4b942"/>
+            <text x="65" y="67" font-family="Arial" font-size="13" font-weight="bold"
+                  fill="#f4b942" text-anchor="middle">NIBM</text>
+            <text x="65" y="77" font-family="Arial" font-size="7" fill="#ccc"
+                  text-anchor="middle">Established 1968</text>
+          </svg>
+        </div>
+
+      </div><!-- /.logo-bar -->
+
+      <p class="cover-institution">
+        Kandy Innovation Centre,<br>
+        National Institute of Business Management
+      </p>
+    </div>
+
+    <!-- RULE -->
+    <hr class="cover-rule"/>
+
+    <!-- DOCUMENT TYPE -->
+    <div>
+      <p class="cover-tag">Undergraduate Research Proposal — CW2</p>
+      <p class="cover-tag" style="font-size:10pt;">NB6005CEM Network Security</p>
+    </div>
+
+    <!-- TITLE -->
+    <div>
+      <p class="cover-title">
+        SecureBank: Security Implementation<br>of a Prototype Secure Banking Application
+      </p>
+      <p class="cover-subtitle">
+        Security Analysis at Algorithm, Protocol &amp; System Levels
+      </p>
+    </div>
+
+    <!-- META -->
+    <div class="cover-meta">
+      <p><strong>Proposed Study Title:</strong><br>
+        Security Implementation of a Prototype Secure Banking Application</p>
+      <br>
+      <p><strong>Name of the Researcher:</strong><br>
+        [Your Full Name Here]</p>
+      <br>
+      <p><strong>Student ID:</strong> [Your Student ID]</p>
+      <p><strong>Programme:</strong> [Your Programme Name]</p>
+      <p><strong>Module:</strong> NB6005CEM – Network Security</p>
+      <p><strong>Date of Submission:</strong> July 2026</p>
+    </div>
+
+    <!-- ADDRESS -->
+    <div class="cover-address">
+      Kandy Innovation Centre,<br>
+      National Institute of Business Management,<br>
+      1095, Kandy – Colombo Rd, Getambe.
+    </div>
+
+    <!-- FOOTER -->
+    <div class="cover-footer">
+      Submitted in partial fulfilment of the requirements for NB6005CEM Network Security &nbsp;|&nbsp; Academic Year 2025–2026
+    </div>
+
+  </div><!-- /.cover-page -->
+</div><!-- /.page (cover) -->
+
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 2 — TABLE OF CONTENTS
+══════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="toc-title">Table of Contents</div>
+
+  <div class="toc-entry">
+    <span class="toc-section">Abstract</span>
+    <span class="toc-page">3</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">1. &nbsp; Introduction</span>
+    <span class="toc-page">3</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">2. &nbsp; Security Analysis</span>
+    <span class="toc-page">4</span>
+  </div>
+  <div class="toc-entry sub">
+    <span class="toc-section">2a. &nbsp; Algorithm-Level Security (40%)</span>
+    <span class="toc-page">4</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2a.1 &nbsp; Password Hashing — Argon2id</span>
+    <span class="toc-page">4</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2a.2 &nbsp; Field-Level Encryption — AES-256-GCM</span>
+    <span class="toc-page">5</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2a.3 &nbsp; Digital Signatures — ECDSA P-256</span>
+    <span class="toc-page">6</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2a.4 &nbsp; Integrity Tagging — HMAC-SHA256</span>
+    <span class="toc-page">6</span>
+  </div>
+  <div class="toc-entry sub">
+    <span class="toc-section">2b. &nbsp; Protocol-Level Security (30%)</span>
+    <span class="toc-page">7</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2b.1 &nbsp; Transport Security — HTTPS / TLS 1.3</span>
+    <span class="toc-page">7</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2b.2 &nbsp; Authentication Protocol — RS256 JWT</span>
+    <span class="toc-page">8</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2b.3 &nbsp; Multi-Factor Authentication — TOTP / RFC 6238</span>
+    <span class="toc-page">9</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2b.4 &nbsp; Secure Email — SMTPS / Implicit TLS (Port 465)</span>
+    <span class="toc-page">9</span>
+  </div>
+  <div class="toc-entry sub">
+    <span class="toc-section">2c. &nbsp; System-Level Security (30%)</span>
+    <span class="toc-page">10</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2c.1 &nbsp; Intrusion Detection System (IDS) Middleware</span>
+    <span class="toc-page">10</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2c.2 &nbsp; Rate Limiting and Account Lockout</span>
+    <span class="toc-page">11</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2c.3 &nbsp; Role-Based Access Control (RBAC) and Least Privilege</span>
+    <span class="toc-page">11</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2c.4 &nbsp; Comprehensive Audit Logging</span>
+    <span class="toc-page">12</span>
+  </div>
+  <div class="toc-entry sub2">
+    <span class="toc-section">2c.5 &nbsp; Account Freeze (User-Initiated Kill Switch)</span>
+    <span class="toc-page">12</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">3. &nbsp; System Architecture Diagram</span>
+    <span class="toc-page">13</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">4. &nbsp; Cross-Reference to CW1 System Design</span>
+    <span class="toc-page">14</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">5. &nbsp; Critical Evaluation</span>
+    <span class="toc-page">15</span>
+  </div>
+  <div class="toc-entry sub">
+    <span class="toc-section">5.1 &nbsp; Strengths of the Implementation</span>
+    <span class="toc-page">15</span>
+  </div>
+  <div class="toc-entry sub">
+    <span class="toc-section">5.2 &nbsp; Limitations and Areas for Improvement</span>
+    <span class="toc-page">15</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">6. &nbsp; Conclusion</span>
+    <span class="toc-page">17</span>
+  </div>
+  <div class="toc-entry">
+    <span class="toc-section">7. &nbsp; References</span>
+    <span class="toc-page">17</span>
+  </div>
+
+  <div class="toc-note">
+    Note: Page numbers are approximate and may vary upon printing depending on browser font rendering.
+    All headings are navigable via browser in-page search (Ctrl+F).
+  </div>
+</div><!-- /.page (TOC) -->
+
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 3+ — MAIN REPORT BODY
+══════════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ─── ABSTRACT ─── -->
+  <div class="abstract-box">
+    <h3>Abstract</h3>
+    <p>
+      This report documents the security implementation of SecureBank, a prototype secure banking application developed as Coursework 2 (CW2) for the NB6005CEM Network Security module. Building upon the system architecture designed in CW1 — which specified a banking environment comprising network infrastructure, managed switches, application servers, and a database layer — CW2 required the realisation of that design as a functional prototype with security applied at three distinct levels: algorithm-level, protocol-level, and system-level.
+    </p>
+    <p>
+      The prototype is implemented using a React/Vite frontend and a Python FastAPI backend, with a cloud-hosted TiDB (MySQL-compatible) database accessible over TLS. Algorithm-level security includes Argon2id password hashing, AES-256-GCM field-level encryption for sensitive database columns, ECDSA (P-256) digital signatures for transaction non-repudiation, and HMAC-SHA256 integrity tagging. Protocol-level security encompasses HTTPS/TLS 1.3 for all API traffic, RS256 JSON Web Tokens (JWT) for stateless authentication, TOTP-based Multi-Factor Authentication per RFC 6238, and SMTPS (Implicit TLS, port 465) for transactional email notifications. System-level security includes a software-based Intrusion Detection System (IDS) middleware, rate limiting, account lockout, Role-Based Access Control (RBAC), and least-privilege database user segregation. The report critically evaluates each control, justifies algorithmic choices against alternatives, and maps all mechanisms back to the vulnerability points identified in the CW1 design.
+    </p>
+  </div>
+
+  <!-- ─── 1. INTRODUCTION ─── -->
+  <h2>1. Introduction</h2>
+  <p>
+    Coursework 1 (CW1) for NB6005CEM required the design of a secure banking system architecture, addressing network topology, trust boundaries, data flows, and potential attack surfaces. The resulting design specified a multi-tier environment comprising: an external user-facing network layer, a managed Layer-2/3 switch fabric enforcing VLAN segmentation, a hardened application server tier, and a consolidated database unit. The CW1 design identified key vulnerability points — unauthenticated data transmission, weak credential storage, absent audit trails, and insufficient access controls — and proposed mitigations through the placement of firewalls, encryption points, and access control boundaries on the system diagram.
+  </p>
+  <p>
+    CW2 requires the construction of a working prototype that instantiates those security controls in real, executable code. SecureBank is that prototype. It is a browser-based banking application with a React/Vite frontend (served at <code>localhost:5173</code>), a FastAPI backend (served over HTTPS at <code>https://localhost:8443</code>), and a cloud-hosted TiDB database (AWS us-west-2, accessed over TLS on port 4000). The system supports customer registration, two-factor login, fund transfers, transaction history, and an administrator dashboard with audit log visibility and fraud review capabilities.
+  </p>
+  <p>
+    Security is applied at three levels as required by the CW2 specification. First, at the <strong>algorithm level</strong>, specific cryptographic primitives are selected and implemented in the backend security modules. Second, at the <strong>protocol level</strong>, industry-standard secure communication protocols govern all data exchange between system components. Third, at the <strong>system level</strong>, procedural and architectural controls harden the runtime environment against attacks not addressed by cryptography alone.
+  </p>
+
+  <!-- ─── 2. SECURITY ANALYSIS ─── -->
+  <h2>2. Security Analysis</h2>
+
+  <!-- 2a Algorithm -->
+  <h3>2a. Algorithm-Level Security (40%)</h3>
+  <p>
+    Algorithm-level security refers to the selection and correct application of cryptographic algorithms — the mathematical primitives that underpin confidentiality, integrity, and authenticity. Four distinct mechanisms are implemented in SecureBank, each targeting a specific attack surface.
+  </p>
+
+  <h4>2a.1 Password Hashing — Argon2id <span class="cp">Control Point G</span></h4>
+  <p>
+    <strong>Technical Mechanism.</strong> Argon2id is a memory-hard, time-hard key derivation function standardised as the winner of the Password Hashing Competition (PHC) in 2015 (Biryukov et al., 2016). It operates by filling a configurable amount of RAM with pseudo-random data during the hashing computation. The <em>id</em> variant hybridises the data-independent memory access of Argon2i (which resists side-channel attacks) with the data-dependent access of Argon2d (which resists GPU-optimised attacks), making Argon2id the recommended choice for general password hashing (Josefsson &amp; Liusvaara, 2019). The output is a self-describing hash string containing the algorithm parameters, a unique 16-byte random salt, and the derived hash.
+  </p>
+  <p>
+    <strong>Configuration Applied.</strong> The implementation in <code>security/password.py</code> uses the <code>argon2-cffi</code> library with OWASP-recommended parameters (OWASP, 2021):
+  </p>
+  <pre>
+ph = PasswordHasher(
+    time_cost=2,       # 2 iterations
+    memory_cost=19456, # 19 MB RAM per hash — resists GPU parallelism
+    parallelism=1,
+    hash_len=32,       # 256-bit output
+    salt_len=16        # 128-bit random salt
+)</pre>
+  <p>
+    <strong>Justification vs. Alternatives.</strong>
+  </p>
+  <table>
+    <caption>Table 1 — Comparison of Password Hashing Algorithms</caption>
+    <tr><th>Algorithm</th><th>Memory-Hard?</th><th>GPU Resistance</th><th>OWASP Recommended?</th><th>Verdict</th></tr>
+    <tr><td>MD5</td><td>No</td><td>Very Poor — microseconds</td><td>No (deprecated)</td><td>Entirely unsuitable</td></tr>
+    <tr><td>SHA-256 (plain)</td><td>No</td><td>Poor — GPU farms trivial</td><td>No</td><td>Unsuitable for passwords</td></tr>
+    <tr><td>bcrypt</td><td>No (limited)</td><td>Moderate</td><td>Acceptable</td><td>Acceptable legacy choice</td></tr>
+    <tr><td>scrypt</td><td>Yes</td><td>Good</td><td>Acceptable</td><td>Reasonable alternative</td></tr>
+    <tr><td><strong>Argon2id</strong></td><td><strong>Yes</strong></td><td><strong>Excellent — 19 MB per hash</strong></td><td><strong>First choice</strong></td><td><strong>Selected ✔</strong></td></tr>
+  </table>
+  <p>
+    bcrypt has a known limitation: its password input is truncated at 72 bytes (Provos &amp; Mazières, 1999), reducing effective entropy of long passphrases. Argon2id imposes no such restriction and is explicitly recommended by NIST SP 800-132 (Turan et al., 2010).
+  </p>
+
+  <h4>2a.2 Field-Level Encryption — AES-256-GCM <span class="cp">Control Point I</span></h4>
+  <p>
+    <strong>Technical Mechanism.</strong> AES (Advanced Encryption Standard) is a symmetric block cipher standardised by NIST in FIPS 197 (NIST, 2001). The GCM (Galois/Counter Mode) operating mode transforms AES into an Authenticated Encryption with Associated Data (AEAD) scheme. GCM generates a keystream from a unique nonce and the block counter using AES in counter mode; it simultaneously computes a GHASH-based authentication tag (McGrew &amp; Viega, 2004). This means GCM provides <em>both</em> confidentiality and integrity without a separate HMAC operation.
+  </p>
+  <p>
+    <strong>Application in the System.</strong> The <code>security/field_crypto.py</code> module applies AES-256-GCM to two sensitive database columns: the TOTP MFA shared secret (<code>users.mfa_secret_encrypted</code>) and National ID number (<code>accounts.national_id_encrypted</code>). A fresh 96-bit nonce is generated per encryption call via <code>os.urandom(12)</code>:
+  </p>
+  <pre>
+aesgcm = AESGCM(KEY)              # 256-bit key from FIELD_ENCRYPTION_KEY env var
+nonce  = os.urandom(12)           # 96-bit random nonce — unique per call
+ciphertext = aesgcm.encrypt(nonce, plaintext.encode("utf-8"), None)
+# Output stored as: base64(nonce[12] || ciphertext+tag)</pre>
+  <table>
+    <caption>Table 2 — Comparison of Symmetric Encryption Modes</caption>
+    <tr><th>Mode</th><th>Confidentiality</th><th>Integrity</th><th>Authenticated?</th><th>Verdict</th></tr>
+    <tr><td>AES-CBC</td><td>Yes</td><td>No (padding oracle risk)</td><td>No</td><td>Insufficient — no integrity</td></tr>
+    <tr><td>AES-ECB</td><td>Poor (pattern leakage)</td><td>No</td><td>No</td><td>Entirely unsuitable</td></tr>
+    <tr><td>DES / 3DES</td><td>Deprecated (56/112-bit)</td><td>No</td><td>No</td><td>Deprecated by NIST (2018)</td></tr>
+    <tr><td><strong>AES-256-GCM</strong></td><td><strong>Yes</strong></td><td><strong>Yes (GCM tag)</strong></td><td><strong>Yes (AEAD)</strong></td><td><strong>Selected ✔</strong></td></tr>
+  </table>
+
+  <h4>2a.3 Digital Signatures — ECDSA P-256 <span class="cp">Control Point J</span></h4>
+  <p>
+    <strong>Technical Mechanism.</strong> ECDSA (Elliptic Curve Digital Signature Algorithm) is an asymmetric signing algorithm standardised in FIPS 186-5 (NIST, 2023). The P-256 curve provides ~128 bits of security, equivalent to a 3072-bit RSA key (NIST, 2020). Signing computes a point multiplication on the elliptic curve using the private key and SHA-256 hash of the message; verification uses the corresponding public key.
+  </p>
+  <p>
+    <strong>Application.</strong> Every financial transaction is signed by <code>security/tx_signing.py</code> before database insertion. Deterministic JSON serialisation (<code>sort_keys=True</code>) ensures the same input always produces the same byte sequence:
+  </p>
+  <pre>
+message   = json.dumps(tx_data, sort_keys=True).encode("utf-8")
+signature = EC_PRIVATE_KEY.sign(message, ec.ECDSA(hashes.SHA256()))
+# Returns base64-encoded DER signature — stored in transactions.signature</pre>
+  <p>
+    This provides <strong>non-repudiation</strong>: it is computationally infeasible to forge a signature without the private key, so each stored record constitutes cryptographic proof of server authorisation.
+  </p>
+
+  <h4>2a.4 Integrity Tagging — HMAC-SHA256 <span class="cp">Control Point I</span></h4>
+  <p>
+    <strong>Technical Mechanism.</strong> HMAC applies a cryptographic hash function with a secret key to produce an integrity tag (Krawczyk et al., 1997): <code>HMAC(K, m) = H((K⊕opad) || H((K⊕ipad) || m))</code>. The result is a 256-bit tag that cannot be computed or forged without the secret key. Verification uses <code>hmac.compare_digest()</code> — a constant-time comparison that prevents timing side-channel attacks:
+  </p>
+  <pre>
+def verify_hmac(tx_data: dict, tag_b64: str) -> bool:
+    expected = base64.b64decode(compute_hmac(tx_data))
+    provided = base64.b64decode(tag_b64)
+    return hmac.compare_digest(expected, provided)  # constant-time — prevents timing attacks</pre>
+  <p>
+    ECDSA and HMAC are complementary: ECDSA provides public verifiability and non-repudiation; HMAC provides fast symmetric integrity checking for internal database consistency verification.
+  </p>
+
+  <!-- 2b Protocol -->
+  <h3>2b. Protocol-Level Security (30%)</h3>
+  <p>Protocol-level security specifies <em>how</em> algorithms are combined, negotiated, and applied across communication channels between system components.</p>
+
+  <h4>2b.1 Transport Security — HTTPS / TLS 1.3 <span class="cp">Protocol Level</span></h4>
+  <p>
+    <strong>How the Protocol Works.</strong> TLS 1.3 (RFC 8446; Rescorla, 2018) performs a 1-RTT handshake using ECDHE key exchange, providing <strong>Perfect Forward Secrecy (PFS)</strong>. All legacy cipher suites (RC4, 3DES, CBC-mode) are removed; only AEAD suites (AES-256-GCM, ChaCha20-Poly1305) are mandated. PFS ensures past sessions remain confidential even if the long-term private key is later compromised.
+  </p>
+  <p>
+    <strong>Implementation.</strong> Uvicorn is launched with an X.509 TLS certificate (<code>keys/server.cert</code>) and RSA-4096 key (<code>keys/server.key</code>). The minimum TLS version is explicitly enforced in <code>main.py</code>:
+  </p>
+  <pre>
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain(certfile="keys/server.cert", keyfile="keys/server.key")
+ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3   # Disables TLS 1.2 and below</pre>
+  <p>
+    All API traffic — passwords, JWT tokens, financial data, and MFA codes — is encrypted in transit, directly mitigating MitM and eavesdropping attacks. The cloud TiDB database also enforces TLS on port 4000.
+  </p>
+
+  <h4>2b.2 Authentication Protocol — RS256 JSON Web Tokens (JWT) <span class="cp">Control Point E</span></h4>
+  <p>
+    <strong>How the Protocol Works.</strong> JSON Web Tokens (RFC 7519; Jones et al., 2015) consist of three Base64URL-encoded sections: header, payload (claims), and signature. RS256 (RSA+SHA-256) uses an asymmetric key pair: the <strong>private key signs</strong> at token issuance; the <strong>public key verifies</strong> on every request. This allows the public key to be distributed to any microservice without exposing the signing secret.
+  </p>
+  <p>
+    <strong>Implementation.</strong> The <code>security/jwt_auth.py</code> module issues 15-minute, role-encoded tokens:
+  </p>
+  <pre>
+payload = {
+    "sub": str(user_id),  # authenticated user ID
+    "role": role,          # "customer" or "admin" — enforces RBAC at API gateway
+    "iat": now,
+    "exp": now + timedelta(minutes=15)   # short-lived — minimises theft window
+}
+return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")</pre>
+  <table>
+    <caption>Table 3 — Comparison of Authentication Token Approaches</caption>
+    <tr><th>Approach</th><th>Stateless?</th><th>CSRF Risk?</th><th>Algorithm</th><th>Verdict</th></tr>
+    <tr><td>Server-side sessions (cookie)</td><td>No</td><td>High</td><td>N/A</td><td>Poor for APIs</td></tr>
+    <tr><td>JWT / HS256</td><td>Yes</td><td>Low</td><td>Symmetric</td><td>Adequate, single-server</td></tr>
+    <tr><td><strong>JWT / RS256</strong></td><td><strong>Yes</strong></td><td><strong>Low</strong></td><td><strong>Asymmetric</strong></td><td><strong>Selected ✔</strong></td></tr>
+    <tr><td>OAuth2 + OpenID Connect</td><td>Yes</td><td>Low</td><td>Various</td><td>Best for production IdP</td></tr>
+  </table>
+
+  <h4>2b.3 Multi-Factor Authentication — TOTP / RFC 6238 <span class="cp">Control Point G</span></h4>
+  <p>
+    <strong>How the Protocol Works.</strong> TOTP (RFC 6238; M'Raihi et al., 2011) generates a 6-digit code: <code>TOTP(K, T) = Truncate(HMAC-SHA1(K, T))</code>, where T is the current UNIX time divided into 30-second windows. Both server and authenticator app independently compute this value — no network connection required during authentication. Codes are valid for 30 seconds with ±1 window tolerance for clock skew.
+  </p>
+  <p>
+    <strong>Implementation.</strong> SecureBank enforces TOTP as a mandatory second factor for both login and fund transfers. The login is explicitly two-step: <code>/login</code> returns a temporary <code>user_id</code>; the JWT is only issued upon successful TOTP verification at <code>/mfa/verify</code>. Transfers additionally re-verify TOTP at point-of-transaction, preventing session hijacking. The TOTP secret is stored AES-256-GCM encrypted (Section 2a.2) — creating defence-in-depth coupling.
+  </p>
+
+  <h4>2b.4 Secure Email — SMTPS / Implicit TLS (Port 465)</h4>
+  <p>
+    <strong>How the Protocol Works.</strong> SMTPS refers to SMTP over Implicit TLS on port 465, where TLS is established <em>before</em> any SMTP commands are exchanged. STARTTLS (port 587) begins with plaintext and upgrades — an active MitM attacker can strip the STARTTLS command, forcing the session unencrypted (a downgrade attack). Implicit TLS on port 465 is not susceptible to this class.
+  </p>
+  <p>
+    <strong>Implementation.</strong> The <code>security/mail.py</code> module uses <code>smtplib.SMTP_SSL</code> (Implicit TLS) to send transfer confirmation and security alert (new-IP login) emails, providing an out-of-band notification channel for anomaly detection.
+  </p>
+
+  <!-- 2c System Level -->
+  <h3>2c. System-Level Security (30%)</h3>
+  <p>System-level controls address threats that cryptography alone cannot prevent: brute-force attacks, privilege escalation, insider threats, and resource abuse.</p>
+
+  <h4>2c.1 Intrusion Detection System — Software IDS Middleware</h4>
+  <p>
+    <strong>Role.</strong> An IDS is a detective control that monitors traffic for attack patterns. The prototype implements a software-equivalent via Starlette ASGI middleware (<code>middleware/ids_monitor.py</code>) that: (1) URL-decodes and inspects request paths against compiled regex signatures for SQLi (<code>UNION SELECT</code>, <code>DROP TABLE</code>), XSS (<code>&lt;script&gt;</code>, <code>javascript:</code>), and path traversal (<code>../</code>); (2) emits WARNING-level logs for matches identifying source IP; (3) logs all requests at INFO level with method, path, status code, and response duration. IDS is a <em>detective</em> control; rate limiting is the complementary <em>preventative</em> control.
+  </p>
+
+  <h4>2c.2 Rate Limiting and Account Lockout <span class="cp">Control Point A</span></h4>
+  <p>
+    Two complementary controls resist brute-force and credential-stuffing attacks. <strong>IP-Level Rate Limiting</strong> via <code>slowapi</code> limits <code>/login</code> to 100 req/15 min, <code>/mfa/verify</code> to 10/min, and <code>/mfa/confirm</code> to 5/min (HTTP 429 on breach). <strong>Account Lockout</strong> locks the account database-side for 15 minutes after 5 consecutive failed password attempts — independent of IP rotation. A Fraud Rules Engine additionally flags transfers exceeding LKR 5,000 for administrator review, simulating AML threshold monitoring (FATF, 2012).
+  </p>
+
+  <h4>2c.3 Role-Based Access Control (RBAC) and Least Privilege <span class="cp">Control Points H &amp; E</span></h4>
+  <p>
+    <strong>Application-Level RBAC.</strong> The JWT <code>role</code> claim (<code>"customer"</code> / <code>"admin"</code>) is verified server-side on every request via <code>require_admin</code> dependency. Administrators cannot initiate transfers; customers cannot access audit logs or fraud queues. <strong>Database Least Privilege</strong>: <code>schema.sql</code> creates two restricted DB users — <code>account_service</code> (SELECT/UPDATE on accounts, SELECT on ledger) and <code>transaction_service</code> (SELECT/INSERT/UPDATE on transactions &amp; ledger). Neither holds DELETE, DROP, or DDL privileges, limiting blast radius of a compromise (NIST, 2018).
+  </p>
+
+  <h4>2c.4 Comprehensive Audit Logging</h4>
+  <p>
+    Every security-relevant event invokes the <code>_audit()</code> helper, inserting an <code>audit_log</code> record with <code>event_type</code>, <code>user_id</code>, descriptive <code>detail</code>, <code>ip_address</code>, and DB-generated <code>created_at</code> timestamp. 16 distinct event types are logged (REGISTER, LOGIN_FAIL, ACCOUNT_LOCKED, TRANSFER, FRAUD_FLAG, etc.). The audit endpoint is admin-only, supporting forensic investigation and compliance with PCI DSS requirements (PCI SSC, 2022).
+  </p>
+
+  <h4>2c.5 Account Freeze (User-Initiated Kill Switch)</h4>
+  <p>
+    Users can self-service freeze their account via the dashboard, setting <code>users.is_frozen = TRUE</code> instantly. This blocks all further logins, MFA operations, and fund transfers until an administrator explicitly unfreezes the account — analogous to a bank card block, providing rapid incident response without requiring customer support intervention.
+  </p>
+
+</div><!-- /.page (main body) -->
+
+
+<!-- ══════════════════════════════════════════════════
+     ARCHITECTURE DIAGRAM PAGE
+══════════════════════════════════════════════════ -->
+<div class="page section-break">
+  <h2 style="margin-top:0;">3. System Architecture Diagram</h2>
+  <p>
+    The following diagram illustrates the full component architecture of the SecureBank prototype, showing the three-tier structure (Client — Application Server — Database), all security modules, and the communication protocols and encryption applied at each boundary.
+  </p>
+
+  <div class="arch-wrap">
+    <svg viewBox="0 0 760 680" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;height:auto;display:block;font-family:Arial,sans-serif;">
+
+      <!-- ══ BACKGROUND GRID ══ -->
+      <defs>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e8eef6" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="760" height="680" fill="#f8faff" rx="8"/>
+      <rect width="760" height="680" fill="url(#grid)" rx="8"/>
+
+      <!-- ══ TITLE ══ -->
+      <text x="380" y="28" text-anchor="middle" font-size="14" font-weight="bold" fill="#0a2e5c">SecureBank — System Security Architecture</text>
+      <line x1="80" y1="36" x2="680" y2="36" stroke="#0a2e5c" stroke-width="1.5"/>
+
+      <!-- ══ LAYER LABELS ══ -->
+      <!-- Client Layer -->
+      <rect x="12" y="50" width="736" height="90" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" opacity="0.5"/>
+      <text x="20" y="68" font-size="9" font-weight="bold" fill="#1d4ed8" opacity="0.8">CLIENT LAYER</text>
+
+      <!-- Browser Box -->
+      <rect x="270" y="58" width="220" height="70" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="380" y="80" text-anchor="middle" font-size="11" font-weight="bold" fill="#1d4ed8">🌐  Browser</text>
+      <text x="380" y="96" text-anchor="middle" font-size="9.5" fill="#1e40af">React / Vite Frontend</text>
+      <text x="380" y="111" text-anchor="middle" font-size="8.5" fill="#3b82f6">localhost:5173</text>
+
+      <!-- ══ TLS ARROW DOWN ══ -->
+      <line x1="380" y1="140" x2="380" y2="165" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arr-green)"/>
+      <rect x="296" y="145" width="168" height="18" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+      <text x="380" y="158" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#166534">🔒  HTTPS / TLS 1.3  (PFS enforced)</text>
+
+      <!-- ══ APPLICATION SERVER LAYER ══ -->
+      <rect x="12" y="168" width="736" height="270" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5" opacity="0.4"/>
+      <text x="20" y="186" font-size="9" font-weight="bold" fill="#92400e" opacity="0.9">APPLICATION SERVER LAYER — FastAPI / Uvicorn  (localhost:8443)</text>
+
+      <!-- Main API box -->
+      <rect x="30" y="192" width="390" height="234" rx="7" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="225" y="211" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#92400e">FastAPI Backend  (main.py)</text>
+      <line x1="40" y1="216" x2="410" y2="216" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <!-- CP badges inside FastAPI box -->
+      <rect x="44" y="222" width="180" height="22" rx="4" fill="#0a2e5c"/>
+      <text x="134" y="237" text-anchor="middle" font-size="9" fill="white">CP-A  Rate Limiter (SlowAPI)</text>
+
+      <rect x="236" y="222" width="162" height="22" rx="4" fill="#0a2e5c"/>
+      <text x="317" y="237" text-anchor="middle" font-size="9" fill="white">IDS Monitor Middleware</text>
+
+      <rect x="44" y="252" width="200" height="22" rx="4" fill="#065f46"/>
+      <text x="144" y="267" text-anchor="middle" font-size="9" fill="white">CP-E  JWT RS256 Auth Gateway</text>
+
+      <rect x="252" y="252" width="148" height="22" rx="4" fill="#065f46"/>
+      <text x="326" y="267" text-anchor="middle" font-size="9" fill="white">RBAC (require_admin)</text>
+
+      <rect x="44" y="282" width="210" height="22" rx="4" fill="#5b21b6"/>
+      <text x="149" y="297" text-anchor="middle" font-size="9" fill="white">CP-G  Argon2id Password Hashing</text>
+
+      <rect x="262" y="282" width="137" height="22" rx="4" fill="#5b21b6"/>
+      <text x="330" y="297" text-anchor="middle" font-size="9" fill="white">TOTP MFA (RFC 6238)</text>
+
+      <rect x="44" y="312" width="222" height="22" rx="4" fill="#991b1b"/>
+      <text x="155" y="327" text-anchor="middle" font-size="9" fill="white">CP-I  AES-256-GCM Field Encryption</text>
+
+      <rect x="274" y="312" width="124" height="22" rx="4" fill="#991b1b"/>
+      <text x="336" y="327" text-anchor="middle" font-size="9" fill="white">HMAC-SHA256 Tag</text>
+
+      <rect x="44" y="342" width="214" height="22" rx="4" fill="#7c3aed"/>
+      <text x="151" y="357" text-anchor="middle" font-size="9" fill="white">CP-J  ECDSA P-256 Tx Signing</text>
+
+      <rect x="266" y="342" width="132" height="22" rx="4" fill="#1e3a5f"/>
+      <text x="332" y="357" text-anchor="middle" font-size="9" fill="white">Audit Log (_audit)</text>
+
+      <rect x="44" y="372" width="354" height="22" rx="4" fill="#374151" opacity="0.85"/>
+      <text x="221" y="387" text-anchor="middle" font-size="9" fill="white">Fraud Rules Engine  (threshold LKR 5,000)  |  Account Freeze</text>
+
+      <!-- Security Modules side box -->
+      <rect x="436" y="192" width="300" height="234" rx="7" fill="#f0f9ff" stroke="#0369a1" stroke-width="1.5"/>
+      <text x="586" y="211" text-anchor="middle" font-size="10" font-weight="bold" fill="#0c4a6e">Security Modules</text>
+      <line x1="446" y1="216" x2="726" y2="216" stroke="#0369a1" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <rect x="449" y="222" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="234.5" text-anchor="middle" font-size="8.5" fill="#075985">security/password.py  →  Argon2id</text>
+
+      <rect x="449" y="245" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="257.5" text-anchor="middle" font-size="8.5" fill="#075985">security/field_crypto.py  →  AES-256-GCM</text>
+
+      <rect x="449" y="268" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="280.5" text-anchor="middle" font-size="8.5" fill="#075985">security/jwt_auth.py  →  RS256 JWT</text>
+
+      <rect x="449" y="291" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="303.5" text-anchor="middle" font-size="8.5" fill="#075985">security/tx_signing.py  →  ECDSA P-256 + HMAC</text>
+
+      <rect x="449" y="314" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="326.5" text-anchor="middle" font-size="8.5" fill="#075985">security/mfa.py  →  TOTP (pyotp / RFC 6238)</text>
+
+      <rect x="449" y="337" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="349.5" text-anchor="middle" font-size="8.5" fill="#075985">security/mail.py  →  SMTPS Port 465</text>
+
+      <rect x="449" y="360" width="274" height="18" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="372.5" text-anchor="middle" font-size="8.5" fill="#075985">middleware/ids_monitor.py  →  IDS / WAF sim.</text>
+
+      <rect x="449" y="383" width="274" height="22" rx="3" fill="#e0f2fe"/>
+      <text x="586" y="397.5" text-anchor="middle" font-size="8" fill="#075985">Keys: RSA-2048 (JWT), ECDSA P-256 (Tx), TLS RSA-4096</text>
+
+      <!-- Arrow from FastAPI → Security Modules -->
+      <line x1="420" y1="310" x2="434" y2="310" stroke="#0369a1" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr-blue)"/>
+
+      <!-- ══ TLS ARROW DOWN (App → DB) ══ -->
+      <line x1="225" y1="442" x2="225" y2="472" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arr-green)"/>
+      <rect x="134" y="447" width="182" height="18" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+      <text x="225" y="460" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#166534">🔒  TLS (port 4000, AWS TiDB)</text>
+
+      <!-- ══ SMTPS ARROW (App → Email) ══ -->
+      <line x1="620" y1="442" x2="620" y2="472" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr-purple)"/>
+      <rect x="536" y="447" width="168" height="18" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+      <text x="620" y="460" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#4c1d95">📧  SMTPS Port 465 (Implicit TLS)</text>
+
+      <!-- ══ DATABASE LAYER ══ -->
+      <rect x="12" y="476" width="490" height="180" rx="8" fill="#d1fae5" stroke="#059669" stroke-width="1.5" opacity="0.5"/>
+      <text x="20" y="494" font-size="9" font-weight="bold" fill="#065f46" opacity="0.9">DATABASE LAYER — TiDB Cloud (MySQL-compatible) · AWS us-west-2 · Port 4000</text>
+
+      <!-- DB Tables -->
+      <rect x="28" y="500" width="120" height="50" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+      <text x="88" y="520" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">users</text>
+      <text x="88" y="534" text-anchor="middle" font-size="8" fill="#065f46">password_hash (Argon2)</text>
+      <text x="88" y="546" text-anchor="middle" font-size="8" fill="#065f46">mfa_secret (AES-GCM)</text>
+
+      <rect x="160" y="500" width="120" height="50" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+      <text x="220" y="520" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">accounts</text>
+      <text x="220" y="534" text-anchor="middle" font-size="8" fill="#065f46">national_id (AES-GCM)</text>
+      <text x="220" y="546" text-anchor="middle" font-size="8" fill="#065f46">account_number</text>
+
+      <rect x="292" y="500" width="120" height="50" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+      <text x="352" y="520" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">transactions</text>
+      <text x="352" y="534" text-anchor="middle" font-size="8" fill="#065f46">signature (ECDSA)</text>
+      <text x="352" y="546" text-anchor="middle" font-size="8" fill="#065f46">hmac_tag (HMAC-256)</text>
+
+      <rect x="28" y="562" width="120" height="38" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+      <text x="88" y="579" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">ledger</text>
+      <text x="88" y="592" text-anchor="middle" font-size="8" fill="#065f46">double-entry entries</text>
+
+      <rect x="160" y="562" width="120" height="38" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+      <text x="220" y="579" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">audit_log</text>
+      <text x="220" y="592" text-anchor="middle" font-size="8" fill="#065f46">16 event types</text>
+
+      <!-- DB Least Privilege note -->
+      <rect x="292" y="562" width="196" height="56" rx="5" fill="#fef9c3" stroke="#ca8a04" stroke-width="1"/>
+      <text x="390" y="577" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#713f12">DB Least Privilege (CP-H)</text>
+      <text x="390" y="590" text-anchor="middle" font-size="8" fill="#713f12">account_service: SELECT/UPDATE</text>
+      <text x="390" y="602" text-anchor="middle" font-size="8" fill="#713f12">transaction_service: SELECT/INSERT</text>
+      <text x="390" y="614" text-anchor="middle" font-size="8" fill="#713f12">No DELETE / DROP privileges</text>
+
+      <!-- ══ EMAIL LAYER ══ -->
+      <rect x="516" y="476" width="232" height="90" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5" opacity="0.6"/>
+      <text x="524" y="494" font-size="9" font-weight="bold" fill="#4c1d95" opacity="0.9">EMAIL SERVICE</text>
+
+      <rect x="528" y="500" width="208" height="58" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2"/>
+      <text x="632" y="519" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">Gmail SMTP</text>
+      <text x="632" y="534" text-anchor="middle" font-size="8.5" fill="#4c1d95">smtp.gmail.com : 465</text>
+      <text x="632" y="548" text-anchor="middle" font-size="8.5" fill="#4c1d95">Implicit TLS (SMTP_SSL)</text>
+
+      <!-- ══ ARROW MARKERS ══ -->
+      <defs>
+        <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+        </marker>
+        <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#0369a1"/>
+        </marker>
+        <marker id="arr-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/>
+        </marker>
+      </defs>
+
+      <!-- ══ LEGEND ══ -->
+      <rect x="16" y="644" width="728" height="28" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <rect x="26" y="652" width="12" height="12" rx="2" fill="#0a2e5c"/>
+      <text x="42" y="662" font-size="8" fill="#1e293b">Control Points (CW2)</text>
+      <rect x="160" y="652" width="12" height="12" rx="2" fill="#16a34a"/>
+      <text x="176" y="662" font-size="8" fill="#1e293b">TLS / Encrypted Channel</text>
+      <rect x="310" y="652" width="12" height="12" rx="2" fill="#7c3aed"/>
+      <text x="326" y="662" font-size="8" fill="#1e293b">SMTPS Email</text>
+      <rect x="420" y="652" width="12" height="12" rx="2" fill="#e0f2fe" stroke="#0369a1" stroke-width="1"/>
+      <text x="436" y="662" font-size="8" fill="#1e293b">Security Module (Python)</text>
+      <rect x="570" y="652" width="12" height="12" rx="2" fill="#ecfdf5" stroke="#10b981" stroke-width="1"/>
+      <text x="586" y="662" font-size="8" fill="#1e293b">Database Table</text>
+
+    </svg>
+    <p class="arch-title">Figure 1 — SecureBank System Architecture: Control Points A, E, G, H, I, J mapped across three security layers</p>
+  </div>
+
+  <p>
+    As illustrated in Figure 1, the architecture follows a strict three-tier model. The Client Layer (React/Vite) communicates exclusively over HTTPS/TLS 1.3 with the Application Server. The FastAPI backend acts as a secure gateway, applying all cryptographic controls before interacting with the Database Layer. A separate email service provides an out-of-band notification channel secured by SMTPS Implicit TLS. The diagram explicitly labels each control point (A, E, G, H, I, J) at its point of application, enabling cross-reference to the CW1 system design vulnerabilities addressed in Section 4.
+  </p>
+
+</div><!-- /.page (arch diagram) -->
+
+
+<!-- ══════════════════════════════════════════════════
+     CROSS-REFERENCE + CRITICAL EVAL + CONCLUSION
+══════════════════════════════════════════════════ -->
+<div class="page section-break">
+
+  <!-- ─── 4. CROSS-REFERENCE ─── -->
+  <h2 style="margin-top:0;">4. Cross-Reference to CW1 System Design</h2>
+  <p>
+    The CW1 system design diagram identified several vulnerability points and mitigation locations. The following table maps each CW2 security control to the corresponding CW1 point:
+  </p>
+  <table>
+    <caption>Table 4 — Mapping of CW2 Security Controls to CW1 Design Vulnerability Points</caption>
+    <tr><th>CW1 Vulnerability / Design Point</th><th>CW2 Security Control Implemented</th><th>Layer</th></tr>
+    <tr>
+      <td>Unauthenticated / plaintext traffic between client and server</td>
+      <td>HTTPS / TLS 1.3 — Uvicorn SSL context, RSA-4096 certificate</td>
+      <td>Protocol</td>
+    </tr>
+    <tr>
+      <td>Weak or reusable credentials enabling account takeover</td>
+      <td>Argon2id password hashing + mandatory TOTP MFA (two-step login)</td>
+      <td>Algorithm + Protocol</td>
+    </tr>
+    <tr>
+      <td>Unauthorised API access — absent authentication mechanism</td>
+      <td>RS256 JWT (15-min expiry, Bearer token, role-encoded payload)</td>
+      <td>Protocol</td>
+    </tr>
+    <tr>
+      <td>Sensitive data exposure in database (MFA secret, National ID)</td>
+      <td>AES-256-GCM field-level encryption (security/field_crypto.py)</td>
+      <td>Algorithm</td>
+    </tr>
+    <tr>
+      <td>Transaction integrity — no mechanism to detect tampered financial records</td>
+      <td>ECDSA P-256 signature + HMAC-SHA256 tag per transaction record</td>
+      <td>Algorithm</td>
+    </tr>
+    <tr>
+      <td>Brute-force / credential-stuffing attacks on login and MFA endpoints</td>
+      <td>SlowAPI rate limiting + 5-attempt account lockout (15 min)</td>
+      <td>System</td>
+    </tr>
+    <tr>
+      <td>Network-level intrusion — absence of traffic monitoring</td>
+      <td>IDS Middleware (regex signature matching + request logging)</td>
+      <td>System</td>
+    </tr>
+    <tr>
+      <td>Privilege escalation — no admin/customer boundary enforcement</td>
+      <td>RBAC via JWT role claim + require_admin FastAPI dependency</td>
+      <td>System + Protocol</td>
+    </tr>
+    <tr>
+      <td>Insider threat — over-privileged database accounts</td>
+      <td>Least-privilege DB users: account_service, transaction_service</td>
+      <td>System</td>
+    </tr>
+    <tr>
+      <td>Absent audit trail — no forensic accountability</td>
+      <td>Comprehensive audit_log table — 16 event types, admin-only access</td>
+      <td>System</td>
+    </tr>
+    <tr>
+      <td>Plaintext email notification channel</td>
+      <td>SMTPS Implicit TLS on port 465 (smtplib.SMTP_SSL)</td>
+      <td>Protocol</td>
+    </tr>
+    <tr>
+      <td>High-value transaction fraud / money laundering risk</td>
+      <td>Fraud Rules Engine (LKR 5,000 threshold) + admin approval queue</td>
+      <td>System</td>
+    </tr>
+  </table>
+
+  <!-- ─── 5. CRITICAL EVALUATION ─── -->
+  <h2>5. Critical Evaluation</h2>
+
+  <h3>5.1 Strengths of the Implementation</h3>
+  <p>
+    The SecureBank prototype demonstrates a coherent, layered security architecture that addresses the principal attack surfaces of an internet-facing financial application. The selection of Argon2id over bcrypt or SHA-256 reflects current best practice from OWASP and NIST, with memory-hardness parameters (19 MB, time_cost=2) correctly calibrated to resist GPU-accelerated offline cracking. The use of AES-256-GCM for field-level encryption is particularly noteworthy: GCM's integrated authentication tag means any database-level tampering with ciphertext is detected at decryption time — a form of cryptographic data integrity absent from simpler "encrypt at rest" implementations.
+  </p>
+  <p>
+    The choice of RS256 (asymmetric) over HS256 (symmetric) for JWT signing is architecturally sound: in a microservices context, the public key can be distributed to downstream services without exposing the signing secret. The 15-minute token expiry is appropriately short for a financial application. Critically, mandatory TOTP re-verification at the point of transaction (not merely at login) constitutes defence-in-depth: even if an attacker obtains a valid JWT from an open session, they cannot move funds without concurrent physical access to the victim's TOTP device.
+  </p>
+  <p>
+    The use of Implicit TLS (port 465) for SMTP rather than STARTTLS (port 587) demonstrates protocol-level awareness that distinguishes the implementation from a naive "just use TLS" approach, specifically preventing STARTTLS downgrade attacks.
+  </p>
+
+  <h3>5.2 Limitations and Areas for Improvement</h3>
+  <p>
+    <strong>Key Management.</strong> The most significant limitation is that the AES-256-GCM encryption key and HMAC key are stored as environment variables in a plaintext <code>.env</code> file. In production, these must reside in a Hardware Security Module (HSM) or cloud KMS (AWS KMS, HashiCorp Vault). A full server compromise including the <code>.env</code> file would allow all encrypted fields to be decrypted — the encryption provides database-layer protection only.
+  </p>
+  <p>
+    <strong>Self-Signed Certificate.</strong> The TLS certificate is self-signed (OpenSSL), providing encryption in transit but no third-party identity verification. Browsers display security warnings, and the certificate cannot be revoked via CRL or OCSP. Production deployment requires a CA-issued certificate (e.g., Let's Encrypt).
+  </p>
+  <p>
+    <strong>IDS Capability.</strong> The IDS middleware inspects only the request URL, not the request body. An attacker submitting SQLi payloads in a JSON body field would not be detected (though parameterised queries prevent execution). A production WAF would perform deep body inspection, and the current IDS is detective-only — integration with a firewall API would enable automated IP blocklisting as a preventative control.
+  </p>
+  <p>
+    <strong>JWT Revocation.</strong> Stateless JWTs cannot be invalidated before 15-minute expiry without a server-side token blacklist (e.g., Redis-backed) or refresh-token rotation. The account freeze control partially mitigates this — frozen accounts reject API requests at database level regardless of JWT validity.
+  </p>
+  <p>
+    <strong>Audit Log Hash Chaining.</strong> The architecture documentation describes a SHA-256 hash chaining mechanism for tamper-evident audit logs. However, the current <code>_audit()</code> helper function does not implement the hash chain computation, representing a gap between design intent and implementation that reduces non-repudiation strength.
+  </p>
+  <p>
+    <strong>No Network-Level Firewall.</strong> The prototype operates without a hardware or OS-level firewall. A production cloud deployment would require AWS Security Groups or UFW rules restricting ingress to ports 443/8443 only.
+  </p>
+
+  <!-- ─── 6. CONCLUSION ─── -->
+  <h2>6. Conclusion</h2>
+  <p>
+    SecureBank demonstrates a functionally complete and technically substantive implementation of multi-layer security for a prototype banking application. At the algorithm level, the system correctly applies Argon2id for password hashing, AES-256-GCM for authenticated field-level encryption, ECDSA P-256 for transaction non-repudiation, and HMAC-SHA256 for symmetric integrity tagging. At the protocol level, TLS 1.3 secures all transport channels, RS256 JWT provides stateless authenticated authorisation, TOTP per RFC 6238 enforces two-factor authentication for both login and transactions, and SMTPS provides a secure out-of-band notification channel. At the system level, an IDS middleware provides real-time threat detection, rate limiting and account lockout resist brute-force attacks, RBAC with JWT role claims enforces privilege separation, and least-privilege database user provisioning minimises insider threat and injection impact.
+  </p>
+  <p>
+    Each control maps directly to a vulnerability point identified in the CW1 system design, demonstrating continuity between design and implementation phases. The critical evaluation in Section 5 identifies areas requiring further investment — particularly key management, certificate infrastructure, IDS body inspection, and JWT revocation — characteristic of a prototype built within time and resource constraints. Collectively, the implementation illustrates that security must be addressed as a layered, integrated concern: the strength of the SecureBank security posture arises from the interlocking nature of its controls, where each layer compensates for the limitations of the others.
+  </p>
+
+  <!-- ─── 7. REFERENCES ─── -->
+  <h2>7. References</h2>
+  <div class="reference-list">
+    <p>Barker, E., &amp; Mouha, N. (2017). <em>NIST SP 800-67 Rev. 2: Recommendation for the Triple Data Encryption Algorithm (TDEA) block cipher</em>. NIST. https://doi.org/10.6028/NIST.SP.800-67r2</p>
+    <p>Bellare, M., Canetti, R., &amp; Krawczyk, H. (1996). Keying hash functions for message authentication. <em>Advances in Cryptology – CRYPTO '96</em>, LNCS 1109 (pp. 1–15). Springer. https://doi.org/10.1007/3-540-68697-5_1</p>
+    <p>Biryukov, A., Dinu, D., &amp; Khovratovich, D. (2016). Argon2: New generation of memory-hard functions for password hashing. <em>2016 IEEE EuroS&amp;P</em> (pp. 292–302). https://doi.org/10.1109/EuroSP.2016.31</p>
+    <p>FATF. (2012). <em>International standards on combating money laundering and the financing of terrorism &amp; proliferation</em>. FATF/OECD. https://www.fatf-gafi.org/recommendations.html</p>
+    <p>FIPS 197. (2001). <em>Advanced Encryption Standard (AES)</em>. NIST. https://doi.org/10.6028/NIST.FIPS.197</p>
+    <p>FIPS 198-1. (2008). <em>The Keyed-Hash Message Authentication Code (HMAC)</em>. NIST. https://doi.org/10.6028/NIST.FIPS.198-1</p>
+    <p>Jones, M., Bradley, J., &amp; Sakimura, N. (2015). <em>RFC 7519: JSON Web Token (JWT)</em>. IETF. https://doi.org/10.17487/RFC7519</p>
+    <p>Krawczyk, H., Bellare, M., &amp; Canetti, R. (1997). <em>RFC 2104: HMAC: Keyed-Hashing for Message Authentication</em>. IETF. https://doi.org/10.17487/RFC2104</p>
+    <p>McGrew, D., &amp; Viega, J. (2004). <em>The Galois/Counter Mode of operation (GCM)</em>. NIST Modes of Operation. https://csrc.nist.gov/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-revised-spec.pdf</p>
+    <p>M'Raihi, D., Rydell, J., Patel, S., &amp; Machani, S. (2011). <em>RFC 6238: TOTP: Time-Based One-Time Password Algorithm</em>. IETF. https://doi.org/10.17487/RFC6238</p>
+    <p>NIST. (2007). <em>SP 800-38D: Recommendation for block cipher modes of operation: GCM and GMAC</em>. https://doi.org/10.6028/NIST.SP.800-38D</p>
+    <p>NIST. (2018). <em>SP 800-162: Guide to attribute based access control (ABAC) definition and considerations</em>. https://doi.org/10.6028/NIST.SP.800-162</p>
+    <p>NIST. (2020). <em>SP 800-57 Part 1 Rev. 5: Recommendation for key management</em>. https://doi.org/10.6028/NIST.SP.800-57pt1r5</p>
+    <p>NIST. (2023). <em>FIPS 186-5: Digital Signature Standard (DSS)</em>. https://doi.org/10.6028/NIST.FIPS.186-5</p>
+    <p>OWASP. (2021a). <em>Password storage cheat sheet</em>. https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html</p>
+    <p>OWASP. (2021b). <em>Authentication cheat sheet</em>. https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html</p>
+    <p>PCI Security Standards Council. (2022). <em>PCI DSS v4.0</em>. https://www.pcisecuritystandards.org/document_library/</p>
+    <p>Provos, N., &amp; Mazières, D. (1999). A future-adaptable password scheme. <em>USENIX ATC '99</em> (pp. 81–91). USENIX.</p>
+    <p>Rescorla, E. (2018). <em>RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3</em>. IETF. https://doi.org/10.17487/RFC8446</p>
+    <p>Saltzer, J. H., &amp; Schroeder, M. D. (1975). The protection of information in computer systems. <em>Proceedings of the IEEE</em>, 63(9), 1278–1308. https://doi.org/10.1109/PROC.1975.9939</p>
+    <p>Turan, M. S., Barker, E., Burr, W., &amp; Chen, L. (2010). <em>NIST SP 800-132: Recommendation for password-based key derivation — Part 1</em>. https://doi.org/10.6028/NIST.SP.800-132</p>
+  </div>
+
+  <hr style="margin-top:30px; border-color:#ddd;"/>
+  <p style="font-size:9pt; text-align:center; color:#888; margin-top:8px;">
+    NB6005CEM Network Security — Coursework 2 &nbsp;|&nbsp; Kandy Innovation Centre, NIBM &nbsp;|&nbsp; July 2026
+  </p>
+
+</div><!-- /.page (eval + conclusion + refs) -->
+
+</div><!-- /.page-wrap -->
+</body>
+</html>

@@ -29,19 +29,50 @@ export default function History() {
     });
   };
 
+  // Helper: get badge style config for a given status
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'completed':
+        return {
+          bg: 'var(--success-tint)',
+          color: 'var(--success)',
+          label: 'Completed',
+        };
+      case 'pending_review':
+        return {
+          bg: '#FFF7ED',
+          color: '#C2410C',
+          label: 'Pending Review',
+        };
+      case 'rejected':
+        return {
+          bg: 'var(--danger-tint)',
+          color: 'var(--danger)',
+          label: 'Rejected',
+        };
+      default:
+        return {
+          bg: '#F3F4F6',
+          color: '#6B7280',
+          label: status ?? 'Unknown',
+        };
+    }
+  };
+
   const filteredData = transactions.filter(tx => {
     if (filter === 'Credits' && tx.type !== 'credit') return false;
     if (filter === 'Debits' && tx.type !== 'debit') return false;
-    // We don't actually have pending in this backend, so pending returns empty
-    if (filter === 'Pending') return false;
-    
+    // Show only pending_review or rejected when Pending filter is active
+    if (filter === 'Pending' && !['pending_review', 'rejected'].includes(tx.status)) return false;
+
     if (search) {
       const q = search.toLowerCase();
       const matchAcct = tx.from_account.toLowerCase().includes(q) || tx.to_account.toLowerCase().includes(q);
       const matchAmt = tx.amount_display.toLowerCase().includes(q);
-      if (!matchAcct && !matchAmt) return false;
+      const matchStatus = (tx.status ?? '').toLowerCase().includes(q);
+      if (!matchAcct && !matchAmt && !matchStatus) return false;
     }
-    
+
     return true;
   });
 
@@ -114,56 +145,96 @@ export default function History() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead style={{ backgroundColor: '#F9FAFB' }}>
                 <tr>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Date</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Description</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Account</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Type</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'right' }}>Amount</th>
-                  <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'center' }}>Status</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Date</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Description</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Account</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Type</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'right' }}>Amount</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB', textAlign: 'center' }}>Status</th>
+                   <th style={{ padding: '1rem 1.5rem', color: 'var(--ink-soft)', fontSize: '0.875rem', borderBottom: '1px solid #E5E7EB' }}>Tx ID</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((tx, i) => (
-                  <tr key={tx.id} style={{ borderBottom: i < filteredData.length - 1 ? '1px solid #E5E7EB' : 'none' }} className="hover-lift">
-                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-                      {formatDate(tx.created_at)}
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem', fontWeight: 700 }}>
-                      {tx.type === 'credit' ? 'Transfer In' : 'Transfer Out'}
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem', color: 'var(--ink-soft)' }}>
-                      {tx.type === 'credit' ? tx.from_account : tx.to_account}
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      <span style={{
-                        backgroundColor: tx.type === 'credit' ? 'var(--teal-light)' : 'var(--danger-tint)',
-                        color: tx.type === 'credit' ? 'var(--teal)' : 'var(--danger)',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontWeight: 800,
-                        textTransform: 'uppercase'
-                      }}>
-                        {tx.type}
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'right', color: tx.type === 'credit' ? 'var(--teal)' : 'var(--ink)' }}>
-                      {tx.type === 'credit' ? '+' : '-'} {tx.amount_display}
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                      <span style={{
-                        backgroundColor: 'var(--success-tint)',
-                        color: 'var(--success)',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '99px',
-                        fontSize: '0.75rem',
-                        fontWeight: 800
-                      }}>
-                        COMPLETED
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {filteredData.map((tx, i) => {
+                   const badge = getStatusBadge(tx.status);
+                   const isRejected = tx.status === 'rejected';
+                   const isPending = tx.status === 'pending_review';
+
+                   return (
+                   <tr
+                     key={tx.id}
+                     style={{
+                       borderBottom: i < filteredData.length - 1 ? '1px solid #E5E7EB' : 'none',
+                       opacity: isRejected ? 0.65 : 1,
+                       backgroundColor: isRejected ? '#FFF5F5' : isPending ? '#FFFBEB' : 'transparent',
+                     }}
+                     className="hover-lift"
+                   >
+                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                       {formatDate(tx.created_at)}
+                     </td>
+                     <td style={{ padding: '1rem 1.5rem', fontWeight: 700 }}>
+                       {tx.type === 'credit' ? 'Transfer In' : 'Transfer Out'}
+                       {isPending && (
+                         <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: '#C2410C', fontWeight: 600 }}>
+                           ⏳ Awaiting admin review
+                         </span>
+                       )}
+                       {isRejected && (
+                         <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--danger)', fontWeight: 600 }}>
+                           ✕ Funds not deducted
+                         </span>
+                       )}
+                     </td>
+                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem', color: 'var(--ink-soft)' }}>
+                       {tx.type === 'credit' ? tx.from_account : tx.to_account}
+                     </td>
+                     <td style={{ padding: '1rem 1.5rem' }}>
+                       <span style={{
+                         backgroundColor: tx.type === 'credit' ? 'var(--teal-light)' : 'var(--danger-tint)',
+                         color: tx.type === 'credit' ? 'var(--teal)' : 'var(--danger)',
+                         padding: '0.25rem 0.5rem',
+                         borderRadius: '4px',
+                         fontSize: '0.75rem',
+                         fontWeight: 800,
+                         textTransform: 'uppercase'
+                       }}>
+                         {tx.type}
+                       </span>
+                     </td>
+                     <td style={{
+                       padding: '1rem 1.5rem',
+                       fontFamily: 'var(--font-mono)',
+                       fontWeight: 600,
+                       textAlign: 'right',
+                       color: isRejected
+                         ? '#9CA3AF'
+                         : tx.type === 'credit'
+                           ? 'var(--teal)'
+                           : 'var(--ink)',
+                       textDecoration: isRejected ? 'line-through' : 'none',
+                     }}>
+                       {tx.type === 'credit' ? '+' : '-'} {tx.amount_display}
+                     </td>
+                     <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
+                       <span style={{
+                         backgroundColor: badge.bg,
+                         color: badge.color,
+                         padding: '0.25rem 0.75rem',
+                         borderRadius: '99px',
+                         fontSize: '0.75rem',
+                         fontWeight: 800,
+                         whiteSpace: 'nowrap',
+                       }}>
+                         {badge.label}
+                       </span>
+                     </td>
+                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
+                       #{tx.id}
+                     </td>
+                   </tr>
+                   );
+                })}
               </tbody>
             </table>
           )}

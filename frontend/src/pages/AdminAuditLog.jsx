@@ -72,13 +72,12 @@ export default function AdminAuditLog() {
   const stats = {
     eventsToday: logs.filter((l) => isToday(l.created_at)).length,
     failedLogins: logs.filter(
-      (l) => l.event_type === "LOGIN_FAIL" || l.event_type === "MFA_FAIL",
+      (l) => l.event_type === "LOGIN_FAIL" || l.event_type === "MFA_FAIL" || l.event_type === "LOGIN_FAIL_FROZEN",
     ).length,
-    accountsLocked: logs.filter((l) => l.event_type === "ACCOUNT_LOCKED")
-      .length, // Assuming this event exists conceptually
+    accountsLocked: locked.length + frozen.length, // Current active locks + frozen
     flaggedRequests: logs.filter(
       (l) =>
-        l.event_type === "SUSPICIOUS_REQUEST" || l.event_type === "IDS_FLAG",
+        l.event_type === "FRAUD_FLAG" || l.event_type === "SUSPICIOUS_REQUEST" || l.event_type === "IDS_FLAG",
     ).length,
   };
 
@@ -252,7 +251,7 @@ export default function AdminAuditLog() {
             color: "var(--danger)",
           },
           {
-            label: "Accounts Locked",
+            label: "Locked / Frozen",
             value: stats.accountsLocked,
             color: "var(--danger)",
           },
