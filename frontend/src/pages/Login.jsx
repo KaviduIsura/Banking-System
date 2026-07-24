@@ -102,9 +102,9 @@ export default function Login() {
         <div className="form-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <label className="form-label" htmlFor="password">Password</label>
-            <a href="#" style={{ fontSize: '0.75rem', fontWeight: 500 }} onClick={(e) => e.preventDefault()}>
+            <Link to="/forgot-password" style={{ fontSize: '0.75rem', fontWeight: 500 }}>
               Forgot password?
-            </a>
+            </Link>
           </div>
           <div style={{ position: 'relative' }}>
             <input

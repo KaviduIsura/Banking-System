@@ -7,6 +7,8 @@ import AppLayout from './layouts/AppLayout';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import MfaSetup from './pages/MfaSetup';
 import MfaVerify from './pages/MfaVerify';
 import Dashboard from './pages/Dashboard';
@@ -25,6 +27,8 @@ export default function App() {
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/mfa-setup" element={<MfaSetup />} />
             <Route path="/mfa-verify" element={<MfaVerify />} />
           </Route>

@@ -65,3 +65,31 @@ def require_admin(auth: dict = Depends(require_auth)) -> dict:
     if auth.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return auth
+
+def issue_reset_jwt(email: str) -> str:
+    """
+    Issue a short-lived (15 min) RS256 JWT specifically for password resets.
+    """
+    now = datetime.datetime.utcnow()
+    payload = {
+        "sub": email,
+        "type": "reset_password",
+        "iat": now,
+        "exp": now + datetime.timedelta(minutes=TOKEN_EXPIRY_MINUTES)
+    }
+    return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+
+def verify_reset_jwt(token: str) -> str:
+    """
+    Verify a password reset JWT and return the email.
+    Raises HTTPException if invalid or expired.
+    """
+    try:
+        payload = verify_jwt(token)
+        if payload.get("type") != "reset_password":
+            raise ValueError("Invalid token type")
+        return payload.get("sub")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid reset link")

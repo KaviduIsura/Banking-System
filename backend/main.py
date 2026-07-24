@@ -25,9 +25,9 @@ from slowapi.errors import RateLimitExceeded
 
 from db import get_connection
 from security.password import hash_password, verify_password
-from security.jwt_auth import issue_jwt, require_auth, require_admin
+from security.jwt_auth import issue_jwt, require_auth, require_admin, issue_reset_jwt, verify_reset_jwt
 from security.mfa import generate_mfa_secret, get_qr_code_base64, verify_totp
-from security.mail import send_transfer_confirmation, send_security_alert
+from security.mail import send_transfer_confirmation, send_security_alert, send_account_frozen_email, send_welcome_email, send_password_reset_email
 from security.field_crypto import encrypt_field, decrypt_field
 from security.tx_signing import sign_transaction, compute_hmac, verify_transaction_signature
 
@@ -113,6 +113,13 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
 
 class MfaVerifyRequest(BaseModel):
     user_id: int
@@ -191,6 +198,9 @@ def register(req: RegisterRequest, request: Request):
         ip = request.client.host if request.client else ""
         _audit("REGISTER", user_id, f"New account created: {account_number}", ip)
 
+        # Send welcome email asynchronously (if configured)
+        send_welcome_email(req.email, req.full_name)
+
         return {
             "message": "Registration successful",
             "account_number": account_number,
@@ -239,7 +249,20 @@ def login(req: LoginRequest, request: Request):
         # Verify password
         if not verify_password(user["password_hash"], req.password):
             failed = user["failed_logins"] + 1
-            if failed >= MAX_FAILED_LOGINS:
+            if failed > MAX_FAILED_LOGINS:
+                # 6th attempt (after 15 min lockout expired) -> Freeze account permanently
+                cursor.execute(
+                    "UPDATE users SET is_frozen=TRUE WHERE id=%s",
+                    (user["id"],)
+                )
+                conn.commit()
+                _audit("ACCOUNT_FROZEN", user["id"], "Account permanently frozen due to repeated failed logins after lockout", ip)
+                send_account_frozen_email(req.email)
+                raise HTTPException(
+                    status_code=423,
+                    detail="Account is permanently frozen due to excessive failed attempts. Please contact support."
+                )
+            elif failed == MAX_FAILED_LOGINS:
                 locked_until = datetime.datetime.utcnow() + datetime.timedelta(minutes=LOCKOUT_MINUTES)
                 cursor.execute(
                     "UPDATE users SET failed_logins=%s, locked_until=%s WHERE id=%s",
@@ -277,6 +300,73 @@ def login(req: LoginRequest, request: Request):
             "mfa_enabled": bool(user["mfa_enabled"]),
             "user_id": user["id"]
         }
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# --- Password Reset Flow ----------------------------------------------------
+
+@app.post("/auth/forgot-password")
+def forgot_password(req: ForgotPasswordRequest, request: Request):
+    """
+    Initiate a password reset flow.
+    Always returns a generic success message to prevent user enumeration.
+    """
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id FROM users WHERE email = %s", (req.email,))
+        user = cursor.fetchone()
+        
+        if user:
+            # Generate a stateless JWT reset token valid for 15 minutes
+            reset_token = issue_reset_jwt(req.email)
+            reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+            
+            # Send the email
+            send_password_reset_email(req.email, reset_link)
+            
+            ip = request.client.host if request.client else ""
+            _audit("PASSWORD_RESET_REQ", user["id"], "Requested password reset link", ip)
+
+        return {"message": "If that email is registered, a password reset link has been sent."}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.post("/auth/reset-password")
+def reset_password(req: ResetPasswordRequest, request: Request):
+    """
+    Verify the reset JWT and update the user's password.
+    """
+    # verify_reset_jwt will raise an HTTPException if the token is invalid or expired
+    email = verify_reset_jwt(req.token)
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Hash new password
+        password_hash = hash_password(req.new_password)
+        
+        # Reset failed_logins and locked_until on successful password reset
+        cursor.execute(
+            "UPDATE users SET password_hash=%s, failed_logins=0, locked_until=NULL WHERE id=%s",
+            (password_hash, user["id"])
+        )
+        conn.commit()
+
+        ip = request.client.host if request.client else ""
+        _audit("PASSWORD_RESET_SUCCESS", user["id"], "Password reset successfully via email link", ip)
+
+        return {"message": "Password reset successfully. You can now log in."}
     finally:
         cursor.close()
         conn.close()
