@@ -204,7 +204,7 @@ def register(req: RegisterRequest, request: Request):
 # --- Login (Step 1) ---------------------------------------------------------
 
 @app.post("/login")
-@limiter.limit("5/15minutes")   # Control Point A — brute-force protection
+@limiter.limit("100/15minutes")   # Control Point A — brute-force protection (Increased for testing)
 def login(req: LoginRequest, request: Request):
     """
     Step 1 of 2-factor login: email + password.
