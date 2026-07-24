@@ -72,7 +72,7 @@ export default function ResetPassword() {
       
       <form onSubmit={handleSubmit} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div className="form-group">
-          <label htmlFor="password">New Password</label>
+          <label className="form-label" htmlFor="password">New Password</label>
           <input
             type="password"
             id="password"
@@ -81,7 +81,7 @@ export default function ResetPassword() {
             placeholder="••••••••"
             required
             disabled={loading}
-            className="input-field"
+            className="form-input"
           />
           <div style={{ marginTop: '0.5rem' }}>
             <div style={{ display: 'flex', gap: '4px', height: '4px', width: '100%' }}>
@@ -107,7 +107,7 @@ export default function ResetPassword() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password</label>
+          <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
           <input
             type="password"
             id="confirmPassword"
@@ -116,7 +116,7 @@ export default function ResetPassword() {
             placeholder="••••••••"
             required
             disabled={loading}
-            className="input-field"
+            className="form-input"
           />
         </div>
         

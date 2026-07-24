@@ -201,6 +201,14 @@
             </ul>
         </li>
         <li>
+            <strong>Network Firewall (Database Isolation)</strong><br>
+            <p>The system enforces strict network boundaries to protect the data tier from external exposure.</p>
+            <ul>
+                <li>The MySQL database explicitly binds only to the <code>127.0.0.1</code> (localhost) loopback interface.</li>
+                <li>This acts as an impenetrable OS-level network firewall, ensuring that port 3306 is completely invisible and inaccessible from the external internet or local area network. Data can only be queried via the FastAPI backend application running on the same host, which acts as the sole secure proxy to the database.</li>
+            </ul>
+        </li>
+        <li>
             <strong>Stateless Password Resets</strong><br>
             <p>The "Forgot Password" flow is handled securely without needing to store stateful OTPs in the database.</p>
             <ul>
@@ -231,6 +239,45 @@
             <ul>
                 <li>Before hashing and signing, the transaction payload is deterministically serialized using <code>json.dumps(tx_data, sort_keys=True)</code>.</li>
                 <li>This ensures that the keys (amount, from_account, to_account, etc.) are always ordered alphabetically, preventing non-deterministic JSON ordering bugs from invalidating perfectly legitimate financial signatures during ledger verification.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Role-Based Access Control (RBAC)</strong><br>
+            <p>The system enforces strict RBAC at the API gateway layer.</p>
+            <ul>
+                <li>The JWT payload securely encodes the user's role (<code>"customer"</code> or <code>"admin"</code>).</li>
+                <li>FastAPI dependency injection (<code>require_admin</code>) guarantees that customers cannot access sensitive endpoints (like audit logs or transaction queues), while administrators are programmatically restricted from initiating financial transfers on behalf of users.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Comprehensive Forensic Audit Logging</strong><br>
+            <p>Every security-relevant mutation is permanently recorded in a dedicated <code>audit_log</code> table.</p>
+            <ul>
+                <li>The system captures the exact event type (e.g., <code>REGISTER</code>, <code>LOGIN_FAIL</code>, <code>TRANSFER</code>, <code>WAF_BLOCK</code>), the user's ID, the executing IP address, and a database-generated timestamp.</li>
+                <li>This ensures strict compliance with financial regulations (like PCI DSS) and enables rapid forensic investigation during a security incident.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Transaction Fraud Rules Engine (AML Simulation)</strong><br>
+            <p>To simulate Anti-Money Laundering (AML) controls, outgoing financial transfers are passed through a rules engine.</p>
+            <ul>
+                <li>If a transfer exceeds a predefined high-risk threshold (e.g., LKR 5,000), it is intercepted and its status is set to <code>pending_review</code>.</li>
+                <li>The funds are placed on hold, and the transaction must be manually reviewed and cryptographically signed by an administrator before clearing the ledger.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Database Least Privilege Architecture</strong><br>
+            <p>The backend does not connect to the database as the root user.</p>
+            <ul>
+                <li>Instead, it relies on restricted service accounts (<code>account_service</code> and <code>transaction_service</code>) with granular permissions.</li>
+                <li>These accounts only hold the exact <code>SELECT</code>, <code>INSERT</code>, or <code>UPDATE</code> privileges required for their micro-domain, completely lacking <code>DELETE</code>, <code>DROP</code>, or DDL rights. This drastically limits the blast radius if the application layer were somehow compromised.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Secure Email Transport (SMTPS via Implicit TLS)</strong><br>
+            <p>All transactional emails (Welcome, Security Alerts, Password Resets, Frozen Accounts) are routed securely to prevent interception.</p>
+            <ul>
+                <li>The system uses <strong>Implicit TLS on Port 465</strong> rather than standard STARTTLS. This encrypts the connection before any SMTP commands are exchanged, protecting the system against active Man-in-the-Middle downgrade attacks.</li>
             </ul>
         </li>
     </ul>

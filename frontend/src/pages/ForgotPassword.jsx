@@ -47,7 +47,7 @@ export default function ForgotPassword() {
       ) : (
         <form onSubmit={handleSubmit} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="form-group">
-            <label htmlFor="email">Email Address</label>
+            <label className="form-label" htmlFor="email">Email Address</label>
             <input
               type="email"
               id="email"
@@ -56,7 +56,7 @@ export default function ForgotPassword() {
               placeholder="you@example.com"
               required
               disabled={loading}
-              className="input-field"
+              className="form-input"
             />
           </div>
           

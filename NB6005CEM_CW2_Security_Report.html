@@ -890,6 +890,287 @@ return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")</pre>
 
 
 <!-- ══════════════════════════════════════════════════
+     SYSTEM WORKFLOW DIAGRAMS PAGE
+══════════════════════════════════════════════════ -->
+<div class="page section-break">
+  <h2 style="margin-top:0;">3a. System Workflow Diagrams</h2>
+  <p>
+    The following flow diagrams detail the exact sequence of security operations executed at each key touchpoint of the system — from user login to fund transfers and account recovery.
+  </p>
+
+  <!-- ── FLOW 1: LOGIN FLOW ── -->
+  <h4 style="margin-top:1.5rem;">Flow A — Two-Step Authentication (Login + TOTP MFA)</h4>
+  <div class="arch-wrap">
+    <svg viewBox="0 0 760 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:Arial,sans-serif;">
+      <defs>
+        <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#334155"/></marker>
+        <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+        <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+      </defs>
+      <!-- Swimlane headers -->
+      <rect x="0" y="0" width="760" height="40" fill="#0f172a" rx="4"/>
+      <text x="95" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">User (Browser)</text>
+      <text x="380" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">FastAPI Backend</text>
+      <text x="665" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Database</text>
+      <!-- Swimlane dividers -->
+      <line x1="190" y1="40" x2="190" y2="480" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="570" y1="40" x2="570" y2="480" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- Step 1 -->
+      <rect x="10" y="55" width="170" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="95" y="78" text-anchor="middle" font-size="11" fill="#1e40af">User enters email + password</text>
+      <line x1="190" y1="73" x2="245" y2="73" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <text x="215" y="68" text-anchor="middle" font-size="9" fill="#64748b">POST /login</text>
+      <!-- WAF check -->
+      <rect x="250" y="55" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="347" y="72" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">① WAF Inspection</text>
+      <text x="347" y="84" text-anchor="middle" font-size="9.5" fill="#92400e">ids_monitor.py — scan for SQLi/XSS</text>
+      <line x1="347" y1="91" x2="347" y2="111" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="3,2" marker-end="url(#arr-red)"/>
+      <text x="360" y="105" font-size="9" fill="#ef4444">Block → 403</text>
+      <!-- Rate limit check -->
+      <rect x="250" y="115" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="347" y="132" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">② Rate Limit Check</text>
+      <text x="347" y="144" text-anchor="middle" font-size="9.5" fill="#92400e">slowapi — 100 req/15min per IP</text>
+      <line x1="347" y1="151" x2="347" y2="171" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <!-- Frozen/Locked check -->
+      <rect x="250" y="175" width="195" height="36" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="347" y="192" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="bold">③ Account Status Check</text>
+      <text x="347" y="204" text-anchor="middle" font-size="9.5" fill="#b91c1c">is_frozen / locked_until (DB query)</text>
+      <line x1="445" y1="193" x2="580" y2="193" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <line x1="347" y1="211" x2="347" y2="231" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <!-- DB lookup -->
+      <rect x="580" y="175" width="170" height="36" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+      <text x="665" y="192" text-anchor="middle" font-size="10.5" fill="#334155">SELECT from users</text>
+      <text x="665" y="204" text-anchor="middle" font-size="9.5" fill="#64748b">failed_logins, locked_until</text>
+      <!-- Argon2id verify -->
+      <rect x="250" y="235" width="195" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="347" y="252" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="bold">④ Argon2id Verification</text>
+      <text x="347" y="264" text-anchor="middle" font-size="9.5" fill="#1e40af">verify_password(hash, plain)</text>
+      <line x1="250" y1="253" x2="50" y2="253" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="3,2" marker-end="url(#arr-red)"/>
+      <text x="148" y="248" text-anchor="middle" font-size="9" fill="#ef4444">Fail → increment, lock if ≥5</text>
+      <line x1="347" y1="271" x2="347" y2="291" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <!-- IP check -->
+      <rect x="250" y="295" width="195" height="36" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="347" y="312" text-anchor="middle" font-size="11" fill="#065f46" font-weight="bold">⑤ New IP Detection</text>
+      <text x="347" y="324" text-anchor="middle" font-size="9.5" fill="#065f46">Compare last_ip → SMTPS alert</text>
+      <line x1="347" y1="331" x2="347" y2="351" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <!-- MFA verify -->
+      <rect x="250" y="355" width="195" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="347" y="372" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="bold">⑥ TOTP MFA Verify</text>
+      <text x="347" y="384" text-anchor="middle" font-size="9.5" fill="#1e40af">POST /mfa/verify — RFC 6238</text>
+      <line x1="347" y1="391" x2="347" y2="411" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+      <!-- Issue JWT -->
+      <rect x="250" y="415" width="195" height="36" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="347" y="432" text-anchor="middle" font-size="11" fill="#065f46" font-weight="bold">⑦ Issue RS256 JWT</text>
+      <text x="347" y="444" text-anchor="middle" font-size="9.5" fill="#065f46">role + sub + exp (15 min) signed</text>
+      <line x1="250" y1="433" x2="190" y2="433" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-green)"/>
+      <text x="215" y="428" text-anchor="middle" font-size="9" fill="#10b981">JWT →</text>
+      <!-- Success -->
+      <rect x="10" y="415" width="170" height="36" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="95" y="437" text-anchor="middle" font-size="11" fill="#065f46">Dashboard Access Granted</text>
+    </svg>
+    <p class="arch-title">Figure 2 — Login Authentication Flow: WAF → Rate Limit → Account Status → Argon2id → IP Alert → TOTP MFA → RS256 JWT</p>
+  </div>
+
+  <!-- ── FLOW 2: FUND TRANSFER FLOW ── -->
+  <h4 style="margin-top:2rem;">Flow B — Secure Fund Transfer</h4>
+  <div class="arch-wrap">
+    <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:Arial,sans-serif;">
+      <defs>
+        <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#334155"/></marker>
+        <marker id="arr-r2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+        <marker id="arr-g2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+      </defs>
+      <rect x="0" y="0" width="760" height="40" fill="#0f172a" rx="4"/>
+      <text x="95" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">User (Browser)</text>
+      <text x="380" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">FastAPI Backend</text>
+      <text x="665" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">DB / Email</text>
+      <line x1="190" y1="40" x2="190" y2="420" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="570" y1="40" x2="570" y2="420" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <rect x="10" y="55" width="170" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="95" y="72" text-anchor="middle" font-size="11" fill="#1e40af">Enter amount + TOTP code</text>
+      <text x="95" y="84" text-anchor="middle" font-size="9.5" fill="#1e40af">POST /transfer</text>
+      <line x1="190" y1="73" x2="245" y2="73" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+      <rect x="250" y="55" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="347" y="72" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">① JWT Auth + RBAC Check</text>
+      <text x="347" y="84" text-anchor="middle" font-size="9.5" fill="#92400e">verify RS256 JWT → role=customer</text>
+      <line x1="347" y1="91" x2="347" y2="115" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+      <rect x="250" y="115" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="347" y="132" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">② TOTP Re-verification</text>
+      <text x="347" y="144" text-anchor="middle" font-size="9.5" fill="#92400e">Prevent session hijacking</text>
+      <line x1="347" y1="151" x2="347" y2="175" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+      <rect x="250" y="175" width="195" height="36" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="347" y="192" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="bold">③ Fraud Rules Engine (AML)</text>
+      <text x="347" y="204" text-anchor="middle" font-size="9.5" fill="#b91c1c">Amount &gt; LKR 5,000 → pending_review</text>
+      <line x1="445" y1="193" x2="575" y2="193" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="3,2" marker-end="url(#arr-r2)"/>
+      <rect x="580" y="175" width="170" height="36" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="665" y="192" text-anchor="middle" font-size="10" fill="#b91c1c">Hold funds — Admin review queue</text>
+      <text x="665" y="204" text-anchor="middle" font-size="9" fill="#b91c1c">status = pending_review</text>
+      <line x1="347" y1="211" x2="347" y2="235" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+      <rect x="250" y="235" width="195" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="347" y="252" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="bold">④ ECDSA P-256 Signing</text>
+      <text x="347" y="264" text-anchor="middle" font-size="9.5" fill="#1e40af">sign_transaction + HMAC-SHA256 tag</text>
+      <line x1="347" y1="271" x2="347" y2="295" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+      <rect x="250" y="295" width="195" height="36" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="347" y="312" text-anchor="middle" font-size="11" fill="#065f46" font-weight="bold">⑤ Double-Entry Ledger Write</text>
+      <text x="347" y="324" text-anchor="middle" font-size="9.5" fill="#065f46">Debit sender + Credit receiver (atomic)</text>
+      <line x1="445" y1="313" x2="575" y2="313" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <rect x="580" y="295" width="170" height="36" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="665" y="312" text-anchor="middle" font-size="10" fill="#065f46">INSERT ledger rows</text>
+      <text x="665" y="324" text-anchor="middle" font-size="9" fill="#065f46">status = completed</text>
+      <line x1="347" y1="331" x2="347" y2="355" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+      <rect x="250" y="355" width="195" height="36" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="347" y="372" text-anchor="middle" font-size="11" fill="#065f46" font-weight="bold">⑥ SMTPS Confirmation Email</text>
+      <text x="347" y="384" text-anchor="middle" font-size="9.5" fill="#065f46">security/mail.py — Port 465 TLS</text>
+      <line x1="250" y1="373" x2="190" y2="373" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-g2)"/>
+      <rect x="10" y="355" width="170" height="36" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="95" y="373" text-anchor="middle" font-size="11" fill="#065f46">Transfer confirmed ✓</text>
+    </svg>
+    <p class="arch-title">Figure 3 — Fund Transfer Flow: JWT Auth → TOTP → Fraud AML Check → ECDSA Sign → Ledger → SMTPS Email</p>
+  </div>
+
+  <!-- ── FLOW 3: PROGRESSIVE LOCKOUT ── -->
+  <h4 style="margin-top:2rem;">Flow C — Progressive Account Lockout &amp; Permanent Freeze</h4>
+  <div class="arch-wrap">
+    <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:Arial,sans-serif;">
+      <defs>
+        <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#334155"/></marker>
+        <marker id="arr-r3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+        <marker id="arr-g3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+      </defs>
+      <!-- Attempt box -->
+      <rect x="10" y="20" width="160" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="90" y="42" text-anchor="middle" font-size="11" fill="#1e40af">Wrong Password Entered</text>
+      <line x1="170" y1="38" x2="210" y2="38" stroke="#334155" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+      <!-- Increment counter -->
+      <rect x="215" y="20" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="312" y="37" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">failed_logins += 1</text>
+      <text x="312" y="49" text-anchor="middle" font-size="9.5" fill="#92400e">UPDATE users SET failed_logins</text>
+      <line x1="312" y1="56" x2="312" y2="80" stroke="#334155" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+      <!-- Diamond decision: >=5? -->
+      <polygon points="312,90 390,120 312,150 234,120" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+      <text x="312" y="117" text-anchor="middle" font-size="11" fill="#92400e">failed_logins</text>
+      <text x="312" y="131" text-anchor="middle" font-size="11" fill="#92400e">≥ 5 ?</text>
+
+      <!-- No branch (< 5) -->
+      <line x1="234" y1="120" x2="90" y2="120" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-g3)"/>
+      <text x="162" y="114" text-anchor="middle" font-size="9" fill="#10b981">No (&lt;5)</text>
+      <rect x="10" y="102" width="160" height="36" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="90" y="120" text-anchor="middle" font-size="11" fill="#065f46">Show attempts remaining</text>
+
+      <!-- Yes branch (≥5): temp lock -->
+      <line x1="390" y1="120" x2="440" y2="120" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-r3)"/>
+      <text x="415" y="114" text-anchor="middle" font-size="9" fill="#ef4444">Yes</text>
+      <rect x="445" y="102" width="195" height="36" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="542" y="119" text-anchor="middle" font-size="11" fill="#b91c1c" font-weight="bold">Temp Lock (15 min)</text>
+      <text x="542" y="131" text-anchor="middle" font-size="9.5" fill="#b91c1c">SET locked_until = NOW()+15min</text>
+      <line x1="542" y1="138" x2="542" y2="162" stroke="#334155" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+      <!-- HTTP 423 -->
+      <rect x="445" y="165" width="195" height="36" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="542" y="182" text-anchor="middle" font-size="11" fill="#b91c1c">HTTP 423 + x-locked-until header</text>
+      <text x="542" y="194" text-anchor="middle" font-size="9.5" fill="#b91c1c">Frontend shows countdown timer</text>
+      <line x1="542" y1="201" x2="542" y2="225" stroke="#334155" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+      <!-- Diamond: wrong again after lock? -->
+      <polygon points="542,235 620,265 542,295 464,265" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+      <text x="542" y="262" text-anchor="middle" font-size="10" fill="#92400e">Wrong after</text>
+      <text x="542" y="277" text-anchor="middle" font-size="10" fill="#92400e">lock expires?</text>
+
+      <!-- No (correct pass) -->
+      <line x1="464" y1="265" x2="380" y2="265" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-g3)"/>
+      <text x="420" y="259" text-anchor="middle" font-size="9" fill="#10b981">Login OK</text>
+      <rect x="215" y="247" width="160" height="36" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="295" y="265" text-anchor="middle" font-size="11" fill="#065f46">Reset failed_logins = 0</text>
+
+      <!-- Yes: permanent freeze -->
+      <line x1="620" y1="265" x2="680" y2="265" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-r3)"/>
+      <text x="650" y="259" text-anchor="middle" font-size="9" fill="#ef4444">Yes</text>
+      <rect x="582" y="308" width="170" height="36" rx="6" fill="#450a0a" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="667" y="325" text-anchor="middle" font-size="11" fill="#fca5a5" font-weight="bold">PERMANENT FREEZE</text>
+      <text x="667" y="337" text-anchor="middle" font-size="9.5" fill="#fca5a5">is_frozen=TRUE + email alert</text>
+      <line x1="667" y1="305" x2="667" y2="280" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-r3)"/>
+    </svg>
+    <p class="arch-title">Figure 4 — Progressive Lockout Flow: 5 failures → 15-min temp lock → 6th failure → Permanent Freeze + Admin-only unfreeze</p>
+  </div>
+
+  <!-- ── FLOW 4: FORGOT PASSWORD ── -->
+  <h4 style="margin-top:2rem;">Flow D — Forgot Password (Stateless JWT Reset)</h4>
+  <div class="arch-wrap">
+    <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:Arial,sans-serif;">
+      <defs>
+        <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#334155"/></marker>
+        <marker id="arr-r4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+        <marker id="arr-g4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+      </defs>
+      <rect x="0" y="0" width="760" height="40" fill="#0f172a" rx="4"/>
+      <text x="95" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">User (Browser)</text>
+      <text x="380" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">FastAPI Backend</text>
+      <text x="665" y="26" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Email Inbox</text>
+      <line x1="190" y1="40" x2="190" y2="360" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="570" y1="40" x2="570" y2="360" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <rect x="10" y="55" width="170" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="95" y="73" text-anchor="middle" font-size="11" fill="#1e40af">Click "Forgot Password?"</text>
+      <text x="95" y="85" text-anchor="middle" font-size="9.5" fill="#1e40af">Enter email address</text>
+      <line x1="190" y1="73" x2="245" y2="73" stroke="#334155" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <text x="215" y="68" text-anchor="middle" font-size="9" fill="#64748b">POST /auth/forgot-password</text>
+
+      <rect x="250" y="55" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="347" y="72" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">① Lookup email in DB</text>
+      <text x="347" y="84" text-anchor="middle" font-size="9.5" fill="#92400e">Always return generic success (anti-enum)</text>
+      <line x1="347" y1="91" x2="347" y2="115" stroke="#334155" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+      <rect x="250" y="115" width="195" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="347" y="132" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="bold">② Issue Reset JWT (RS256)</text>
+      <text x="347" y="144" text-anchor="middle" font-size="9.5" fill="#1e40af">type="reset_password", exp=15min</text>
+      <line x1="347" y1="151" x2="347" y2="175" stroke="#334155" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+      <rect x="250" y="175" width="195" height="36" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="347" y="192" text-anchor="middle" font-size="11" fill="#065f46" font-weight="bold">③ SMTPS Email with Link</text>
+      <text x="347" y="204" text-anchor="middle" font-size="9.5" fill="#065f46">security/mail.py — Port 465 TLS</text>
+      <line x1="445" y1="193" x2="575" y2="193" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-g4)"/>
+      <rect x="580" y="175" width="170" height="36" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="665" y="193" text-anchor="middle" font-size="11" fill="#065f46">User receives reset link</text>
+
+      <!-- User clicks link -->
+      <line x1="665" y1="211" x2="665" y2="260" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3,3"/>
+      <line x1="575" y1="260" x2="665" y2="260" stroke="#94a3b8" stroke-width="1.2"/>
+      <line x1="575" y1="260" x2="190" y2="260" stroke="#94a3b8" stroke-width="1.2"/>
+      <line x1="190" y1="260" x2="95" y2="260" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="430" y="254" text-anchor="middle" font-size="9" fill="#64748b">User clicks link → /reset-password?token=…</text>
+
+      <rect x="10" y="268" width="170" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="95" y="286" text-anchor="middle" font-size="11" fill="#1e40af">Enter new password</text>
+      <text x="95" y="298" text-anchor="middle" font-size="9.5" fill="#1e40af">(zxcvbn strength check)</text>
+      <line x1="190" y1="286" x2="245" y2="286" stroke="#334155" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <text x="215" y="280" text-anchor="middle" font-size="9" fill="#64748b">POST /auth/reset-password</text>
+
+      <rect x="250" y="268" width="195" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="347" y="285" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">④ Verify JWT + Argon2id hash</text>
+      <text x="347" y="297" text-anchor="middle" font-size="9.5" fill="#92400e">Verify token type + exp → UPDATE users</text>
+      <line x1="250" y1="286" x2="190" y2="318" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-g4)"/>
+
+      <rect x="10" y="305" width="170" height="36" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="95" y="323" text-anchor="middle" font-size="11" fill="#065f46">Redirect to Login ✓</text>
+    </svg>
+    <p class="arch-title">Figure 5 — Forgot Password Flow: Email lookup (anti-enumeration) → RS256 Reset JWT → SMTPS → zxcvbn check → Argon2id update</p>
+  </div>
+
+</div><!-- /.page (workflow diagrams) -->
+
+
+
+<!-- ══════════════════════════════════════════════════
      CROSS-REFERENCE + CRITICAL EVAL + CONCLUSION
 ══════════════════════════════════════════════════ -->
 <div class="page section-break">
