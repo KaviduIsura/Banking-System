@@ -101,8 +101,14 @@ export default function History() {
           {loading ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-soft)' }}>Loading...</div>
           ) : filteredData.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-soft)' }}>
-              No transactions found.
+            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--ink-soft)' }}>
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom: '1rem', opacity: 0.5 }}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              <h3 style={{ fontSize: '1.125rem', color: 'var(--ink)', marginBottom: '0.5rem' }}>No transactions found</h3>
+              <p>We couldn't find any matching transactions.</p>
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>

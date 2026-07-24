@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureBank: Security Architecture & System Documentation</title>
+    <style>
+        :root {
+            --primary: #0F172A;
+            --accent: #10B981;
+            --text-main: #334155;
+            --text-light: #64748B;
+            --bg-light: #F8FAFC;
+            --border: #E2E8F0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #FFFFFF;
+        }
+        h1, h2, h3, h4 {
+            color: var(--primary);
+            margin-top: 2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 4px solid var(--accent);
+            padding-bottom: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            font-size: 1.75rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        p {
+            margin-bottom: 1rem;
+        }
+        .highlight {
+            background-color: var(--bg-light);
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th, td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: var(--bg-light);
+            color: var(--primary);
+        }
+        code {
+            background-color: var(--bg-light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #b91c1c;
+        }
+        .print-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            transition: opacity 0.2s;
+        }
+        .print-btn:hover {
+            opacity: 0.9;
+        }
+        @media print {
+            .print-btn {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn" onclick="window.print()">🖨️ Download as PDF (Print)</button>
+
+    <h1>SecureBank: System & Security Architecture</h1>
+    
+    <div class="highlight">
+        <strong>Overview:</strong> SecureBank is a production-grade digital banking and fintech simulator. It demonstrates a highly resilient, modern core banking engine equipped with stringent cryptographic controls, immutable ledger transaction signing, and an intuitive user interface.
+    </div>
+
+    <h2>1. System Use Cases & Target Audience</h2>
+    <p><strong>What is the use of this project?</strong></p>
+    <p>This system serves as a secure transactional core for financial technology applications. It handles the critical path of authenticating users, managing highly sensitive PII (Personally Identifiable Information), authorising fund transfers, and maintaining a non-repudiable audit log of ledger activities.</p>
+    
+    <p><strong>Where can it be used?</strong></p>
+    <ul>
+        <li><strong>Fintech Startups & Challenger Banks:</strong> As a foundational architecture for building e-wallets, peer-to-peer (P2P) payment apps, and digital-first banking services.</li>
+        <li><strong>Enterprise Financial Institutions:</strong> As a reference implementation for transitioning legacy core-banking systems to modern, cryptographically sound microservices.</li>
+        <li><strong>Security Audits & Education:</strong> As a comprehensive showcase of implementing OWASP (Open Worldwide Application Security Project) standards and advanced cryptography in a modern web stack.</li>
+    </ul>
+
+    <h2>2. System Architecture</h2>
+    <div class="grid">
+        <div class="card">
+            <h3>Frontend (Client Layer)</h3>
+            <p>Built with <strong>React.js</strong> and <strong>Vite</strong>. It features a modern, responsive Single Page Application (SPA) architecture utilizing React Router for navigation.</p>
+            <p>The UI relies on a robust CSS Variable design system, offering premium fintech aesthetics (glassmorphism, subtle elevations, bespoke SVG iconography) without heavy CSS frameworks.</p>
+        </div>
+        <div class="card">
+            <h3>Backend (API & Logic Layer)</h3>
+            <p>Built with <strong>FastAPI (Python)</strong>. It provides an asynchronous, high-performance RESTful API gateway.</p>
+            <p>The backend is entirely decoupled from the frontend, ensuring strict validation of all requests. It utilizes <code>Uvicorn</code> running over enforced TLS/HTTPS for secure transport.</p>
+        </div>
+    </div>
+
+    <h2>3. Core Cryptographic Algorithms & Security Features</h2>
+    <p>The system integrates security across multiple "Control Points" spanning the protocol, application, and algorithm levels.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Security Feature</th>
+                <th>Algorithm / Technology</th>
+                <th>Concept & Justification</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Password Hashing</strong></td>
+                <td><code>Argon2id</code></td>
+                <td>Argon2id is the OWASP-recommended standard. It is a memory-hard function (configured here to use 19MB of RAM per hash), making it highly resistant to GPU, ASIC, and side-channel brute-force attacks compared to older algorithms like bcrypt or PBKDF2.</td>
+            </tr>
+            <tr>
+                <td><strong>Data-at-Rest Encryption</strong></td>
+                <td><code>AES-256-GCM</code></td>
+                <td>Used for encrypting highly sensitive fields in the database (e.g., National ID numbers, MFA secrets). AES-256-GCM provides both <strong>Confidentiality</strong> (symmetric encryption) and <strong>Authenticated Integrity</strong> (via the GCM tag). It uses a unique 96-bit nonce per encryption to prevent ciphertext reuse.</td>
+            </tr>
+            <tr>
+                <td><strong>Authentication Tokens</strong></td>
+                <td><code>JWT (RS256)</code></td>
+                <td>JSON Web Tokens signed with asymmetric RSA cryptography. The backend signs tokens with a private key, and verifies them with a public key. Tokens are strictly short-lived (15 minutes) to reduce the attack window of stolen tokens.</td>
+            </tr>
+            <tr>
+                <td><strong>Multi-Factor Auth (MFA)</strong></td>
+                <td><code>TOTP (HMAC-SHA1)</code></td>
+                <td>Time-based One-Time Passwords adhering to RFC 6238. A 30-second rotating code is generated using the Google Authenticator/Authy standard. Prevents credential stuffing and phishing of static passwords.</td>
+            </tr>
+            <tr>
+                <td><strong>Immutable Ledger Signing</strong></td>
+                <td><code>ECDSA (P-256)</code> & <code>HMAC-SHA256</code></td>
+                <td>To ensure financial non-repudiation, every transaction is cryptographically signed using an Elliptic Curve private key (ECDSA). A secondary HMAC-SHA256 tag is generated. If a database administrator attempts to manually alter an account balance or transaction record, the signature verification will fail, detecting the tampering instantly.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>4. Advanced Threat Mitigation Strategies</h2>
+    <p>Beyond standard cryptography, SecureBank utilizes application-layer controls to actively defend against ongoing attacks. These mitigations are deeply integrated into the API endpoints (<code>main.py</code>) and the database schema.</p>
+    
+    <ul>
+        <li>
+            <strong>Brute-Force & Credential Stuffing Prevention (Control Point A)</strong><br>
+            <p>The system actively tracks failed login attempts within the <code>users</code> table. When an authentication attempt fails, the <code>failed_login_attempts</code> counter increments.</p>
+            <ul>
+                <li>If the counter reaches the threshold of <code>MAX_FAILED_LOGINS = 5</code>, the account is immediately placed into a temporary lock state.</li>
+                <li>The API responds with a strict <code>HTTP 423 Locked</code> status code instead of a generic 401.</li>
+                <li>A <code>x-locked-until</code> HTTP header is returned, informing the frontend exactly when the lockout expires (typically 15 minutes), preventing automated bots from hammering the endpoint.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Suspicious Activity Alerting (Control Point B)</strong><br>
+            <p>During a successful login, the system compares the incoming client IP against the user's historical login IPs stored in the <code>login_history</code> table.</p>
+            <ul>
+                <li>If a login occurs from an unrecognized or previously unseen IP address, an asynchronous background task is triggered.</li>
+                <li>The system integrates an SMTP service (<code>mail.py</code>) running over TLS port 465 to instantly dispatch a security alert email to the account owner, empowering the user to take immediate action if their credentials were stolen.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Account Freezing ("Kill Switch")</strong><br>
+            <p>In the event of a suspected compromise, users have the ability to instantly freeze their account directly from the frontend dashboard.</p>
+            <ul>
+                <li>Triggering the kill switch updates the user's database <code>status</code> field to <code>'frozen'</code>.</li>
+                <li>The <code>require_auth</code> middleware and sensitive routes (like <code>/transfer</code>) strictly check this status. Once frozen, the account is strictly prohibited from processing outgoing financial transfers.</li>
+                <li>Existing active sessions (JWTs) lose all authorization to perform mutations, stopping attackers in their tracks. Only a system administrator can unfreeze an account via the secure admin panel.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Deterministic JSON Serialisation</strong><br>
+            <p>To compute reliable ECDSA signatures for financial transactions, the data must be serialized identically every time. In Python, dictionaries are inherently unordered.</p>
+            <ul>
+                <li>Before hashing and signing, the transaction payload is deterministically serialized using <code>json.dumps(tx_data, sort_keys=True)</code>.</li>
+                <li>This ensures that the keys (amount, from_account, to_account, etc.) are always ordered alphabetically, preventing non-deterministic JSON ordering bugs from invalidating perfectly legitimate financial signatures during ledger verification.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>5. Conclusion</h2>
+    <p>SecureBank represents the gold standard for secure, resilient application development by demonstrating that security cannot be an afterthought—it must be architected into the very foundation of the system.</p>
+    <p>By enforcing Defense-in-Depth, the system mitigates singular points of failure. The combination of memory-hard password hashing (Argon2id), authenticated field-level encryption for PII (AES-256-GCM), stateless asymmetric authentication (JWT RS256), and cryptographically signed immutable ledgers (ECDSA) guarantees data confidentiality, integrity, and non-repudiation.</p>
+    <p>Ultimately, SecureBank proves that a modern fintech application can operate securely in a hostile, zero-trust environment while maintaining a seamless and premium user experience.</p>
+
+    <footer style="margin-top: 3rem; text-align: center; color: var(--text-light); font-size: 0.875rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+        Generated Documentation • SecureBank Core Systems
+    </footer>
+
+</body>
+</html>

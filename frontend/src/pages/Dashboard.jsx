@@ -287,7 +287,7 @@ export default function Dashboard() {
                     justifyContent: "center",
                   }}
                 >
-                  ⭐
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                 </div>
                 <span style={{ fontSize: "1.25rem" }}>•••</span>
               </div>
@@ -334,7 +334,7 @@ export default function Dashboard() {
                     justifyContent: "center",
                   }}
                 >
-                  📈
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                 </div>
                 <span
                   style={{ fontSize: "1.25rem", color: "var(--teal-dark)" }}
@@ -377,7 +377,9 @@ export default function Dashboard() {
                 fontSize: "1.125rem",
               }}
             >
-              <span style={{ color: "var(--teal)" }}>👤</span> Account Profile
+              <span style={{ color: "var(--teal)", display: "flex" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </span> Account Profile
             </h3>
             <div
               style={{
@@ -414,7 +416,7 @@ export default function Dashboard() {
                       style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
                       title="Copy Full Name"
                     >
-                      📋
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   )}
                 </div>
@@ -447,7 +449,7 @@ export default function Dashboard() {
                       style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
                       title="Copy Date of Birth"
                     >
-                      📋
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   )}
                 </div>
@@ -481,7 +483,7 @@ export default function Dashboard() {
                       style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
                       title="Copy Phone"
                     >
-                      📋
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   )}
                 </div>
@@ -514,7 +516,7 @@ export default function Dashboard() {
                       style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
                       title="Copy Address"
                     >
-                      📋
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   )}
                 </div>
@@ -548,7 +550,7 @@ export default function Dashboard() {
                       style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
                       title="Copy Account Number"
                     >
-                      📋
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   )}
                 </div>
@@ -584,7 +586,7 @@ export default function Dashboard() {
         >
           {/* Credit Card Widget */}
           <div
-            className="card widget-dark"
+            className="card bank-card"
             style={{
               padding: "1.5rem 1.5rem 2rem",
               border: "none",
@@ -640,7 +642,7 @@ export default function Dashboard() {
                   }}
                   title="Copy Full Account Number"
                 >
-                  📋
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
               )}
             </div>
@@ -748,7 +750,7 @@ export default function Dashboard() {
                           fontSize: "1rem",
                         }}
                       >
-                        {tx.type === "credit" ? "↙" : "↗"}
+                        {tx.type === "credit" ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="7" y1="7" x2="17" y2="17"></line><polyline points="17 7 17 17 7 17"></polyline></svg>}
                       </div>
                       <div>
                         <p style={{ fontWeight: 600, fontSize: "0.875rem" }}>
@@ -816,7 +818,9 @@ export default function Dashboard() {
             padding: "2rem",
             textAlign: "center"
           }}>
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚠️</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem", color: "var(--danger)" }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
             <h3 style={{ marginBottom: "1rem", color: "var(--danger)" }}>Freeze Account</h3>
             <p style={{ color: "var(--ink-soft)", marginBottom: "2rem", fontSize: "0.875rem" }}>
               Are you sure you want to freeze your account? You will be logged out and cannot log back in until you contact support.
