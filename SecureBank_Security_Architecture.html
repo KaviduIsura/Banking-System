@@ -184,12 +184,28 @@
     
     <ul>
         <li>
-            <strong>Brute-Force & Credential Stuffing Prevention (Control Point A)</strong><br>
+            <strong>Brute-Force, Credential Stuffing & Progressive Lockout (Control Point A)</strong><br>
             <p>The system actively tracks failed login attempts within the <code>users</code> table. When an authentication attempt fails, the <code>failed_login_attempts</code> counter increments.</p>
             <ul>
                 <li>If the counter reaches the threshold of <code>MAX_FAILED_LOGINS = 5</code>, the account is immediately placed into a temporary lock state.</li>
-                <li>The API responds with a strict <code>HTTP 423 Locked</code> status code instead of a generic 401.</li>
-                <li>A <code>x-locked-until</code> HTTP header is returned, informing the frontend exactly when the lockout expires (typically 15 minutes), preventing automated bots from hammering the endpoint.</li>
+                <li>The API responds with a strict <code>HTTP 423 Locked</code> status code and a <code>x-locked-until</code> HTTP header is returned, informing the frontend exactly when the lockout expires (typically 15 minutes), preventing automated bots from hammering the endpoint.</li>
+                <li><strong>Permanent Freeze Escalation:</strong> If an attacker waits out the temporary lock and fails a 6th consecutive attempt, the system permanently freezes the account (<code>is_frozen = TRUE</code>) and issues an immediate automated email alert to the user. Only an administrator can unfreeze the account.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Web Application Firewall (WAF)</strong><br>
+            <p>A custom ASGI middleware (<code>ids_monitor.py</code>) acts as a preventative Web Application Firewall.</p>
+            <ul>
+                <li>It decodes and inspects all incoming request paths against compiled regex signatures for common attacks such as SQL Injection (<code>UNION SELECT</code>), Cross-Site Scripting (<code>&lt;script&gt;</code>), and Path Traversal (<code>../</code>).</li>
+                <li>If a malicious payload is detected, the WAF immediately intercepts and drops the request, returning a <code>403 Forbidden</code> JSON response, preventing the malicious input from ever reaching the core application logic.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Stateless Password Resets</strong><br>
+            <p>The "Forgot Password" flow is handled securely without needing to store stateful OTPs in the database.</p>
+            <ul>
+                <li>The backend issues a specific, short-lived (15-minute) RS256 JWT with a custom <code>type="reset_password"</code> claim.</li>
+                <li>This token is emailed to the user as a clickable link. Because it is a JWT, the backend can cryptographically verify its authenticity and expiration entirely statelessly.</li>
             </ul>
         </li>
         <li>

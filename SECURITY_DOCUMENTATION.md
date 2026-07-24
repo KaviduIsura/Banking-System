@@ -59,6 +59,9 @@ The system explicitly logs:
 
 - **Implementation:** Handled via the `slowapi` library acting as middleware on the FastAPI application.
 - **Thresholds:** Endpoints like `/login` and `/mfa/verify` are strictly rate-limited (e.g., 5 requests per minute per IP) to prevent automated brute-forcing or credential stuffing attacks.
+- **Web Application Firewall (WAF):** A custom Starlette middleware (`ids_monitor.py`) acts as a Web Application Firewall. It inspects all incoming request paths for malicious signatures (SQLi, XSS, Path Traversal) and instantly drops flagged requests with a `403 Forbidden` response.
+- **Progressive Account Lockout:** The system implements strict database-side account lockouts. After 5 consecutive failed login attempts, the account is temporarily locked for 15 minutes. If a 6th consecutive failure occurs after the lock expires, the account is permanently frozen (`is_frozen = TRUE`) and an email alert is dispatched. Only an admin can unfreeze the account.
+- **Stateless Password Resets:** Password resets are handled securely without storing database OTPs. A short-lived (15-min) RS256 JWT with a `reset_password` claim is generated and securely emailed to the user, ensuring the reset flow is stateless and tamper-proof.
 
 ### 3.2 SQL Injection (SQLi) Protection
 

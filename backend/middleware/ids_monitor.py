@@ -45,9 +45,16 @@ class IDSMonitorMiddleware(BaseHTTPMiddleware):
                 
         if is_suspicious:
             client_ip = request.client.host if request.client else "unknown"
-            logger.warning(f"SUSPICIOUS_REQUEST detected from {client_ip} on URL: {url_str}")
+            logger.warning(f"WAF_BLOCK | Malicious payload detected from {client_ip} on URL: {url_str}")
+            
+            # WAF (Web Application Firewall): Actively block the request
+            from starlette.responses import JSONResponse
+            return JSONResponse(
+                status_code=403, 
+                content={"detail": "Forbidden: Malicious request signature detected by Web Application Firewall."}
+            )
         
-        # Process the request
+        # Process the request normally if clean
         response = await call_next(request)
         
         # 2. Log the request outcome

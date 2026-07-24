@@ -417,7 +417,7 @@
     <span class="toc-page">10</span>
   </div>
   <div class="toc-entry sub2">
-    <span class="toc-section">2c.1 &nbsp; Intrusion Detection System (IDS) Middleware</span>
+    <span class="toc-section">2c.1 &nbsp; Web Application Firewall (WAF) / IDS Middleware</span>
     <span class="toc-page">10</span>
   </div>
   <div class="toc-entry sub2">
@@ -613,12 +613,13 @@ ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3   # Disables TLS 1.2 and be
     <strong>How the Protocol Works.</strong> JSON Web Tokens (RFC 7519; Jones et al., 2015) consist of three Base64URL-encoded sections: header, payload (claims), and signature. RS256 (RSA+SHA-256) uses an asymmetric key pair: the <strong>private key signs</strong> at token issuance; the <strong>public key verifies</strong> on every request. This allows the public key to be distributed to any microservice without exposing the signing secret.
   </p>
   <p>
-    <strong>Implementation.</strong> The <code>security/jwt_auth.py</code> module issues 15-minute, role-encoded tokens:
+    <strong>Implementation.</strong> The <code>security/jwt_auth.py</code> module issues 15-minute, role-encoded tokens for authentication. Additionally, the system employs <strong>Stateless JWTs for Password Resets</strong>. Instead of storing stateful reset OTPs in the database, the backend issues a separate 15-minute RS256 JWT with a custom <code>type="reset_password"</code> claim, transmitted via email. This maintains the application's stateless architecture whilst ensuring reset links securely auto-expire.
   </p>
   <pre>
 payload = {
-    "sub": str(user_id),  # authenticated user ID
+    "sub": str(user_id),  # authenticated user ID (or email for reset)
     "role": role,          # "customer" or "admin" — enforces RBAC at API gateway
+    "type": token_type,    # e.g., "auth" or "reset_password"
     "iat": now,
     "exp": now + timedelta(minutes=15)   # short-lived — minimises theft window
 }
@@ -645,21 +646,21 @@ return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")</pre>
     <strong>How the Protocol Works.</strong> SMTPS refers to SMTP over Implicit TLS on port 465, where TLS is established <em>before</em> any SMTP commands are exchanged. STARTTLS (port 587) begins with plaintext and upgrades — an active MitM attacker can strip the STARTTLS command, forcing the session unencrypted (a downgrade attack). Implicit TLS on port 465 is not susceptible to this class.
   </p>
   <p>
-    <strong>Implementation.</strong> The <code>security/mail.py</code> module uses <code>smtplib.SMTP_SSL</code> (Implicit TLS) to send transfer confirmation and security alert (new-IP login) emails, providing an out-of-band notification channel for anomaly detection.
+    <strong>Implementation.</strong> The <code>security/mail.py</code> module uses <code>smtplib.SMTP_SSL</code> (Implicit TLS) to send transactional emails, providing a secure out-of-band notification channel. This includes: welcome verifications, fund transfer confirmations, temporary lockout warnings (new-IP detection), password reset links, and permanent account freeze alerts.
   </p>
 
   <!-- 2c System Level -->
   <h3>2c. System-Level Security (30%)</h3>
   <p>System-level controls address threats that cryptography alone cannot prevent: brute-force attacks, privilege escalation, insider threats, and resource abuse.</p>
 
-  <h4>2c.1 Intrusion Detection System — Software IDS Middleware</h4>
+  <h4>2c.1 Web Application Firewall (WAF) / IDS Middleware</h4>
   <p>
-    <strong>Role.</strong> An IDS is a detective control that monitors traffic for attack patterns. The prototype implements a software-equivalent via Starlette ASGI middleware (<code>middleware/ids_monitor.py</code>) that: (1) URL-decodes and inspects request paths against compiled regex signatures for SQLi (<code>UNION SELECT</code>, <code>DROP TABLE</code>), XSS (<code>&lt;script&gt;</code>, <code>javascript:</code>), and path traversal (<code>../</code>); (2) emits WARNING-level logs for matches identifying source IP; (3) logs all requests at INFO level with method, path, status code, and response duration. IDS is a <em>detective</em> control; rate limiting is the complementary <em>preventative</em> control.
+    <strong>Role.</strong> A WAF is a preventative control that intercepts traffic to block attack patterns. The prototype implements a software-equivalent via Starlette ASGI middleware (<code>middleware/ids_monitor.py</code>) that URL-decodes and inspects request paths against compiled regex signatures for SQLi (<code>UNION SELECT</code>, <code>DROP TABLE</code>), XSS (<code>&lt;script&gt;</code>, <code>javascript:</code>), and path traversal (<code>../</code>). If a malicious signature is detected, the middleware instantly drops the request, returning a <code>403 Forbidden</code> JSON response and logging a <code>WAF_BLOCK</code> event. All clean requests are passed through and logged for audit purposes.
   </p>
 
-  <h4>2c.2 Rate Limiting and Account Lockout <span class="cp">Control Point A</span></h4>
+  <h4>2c.2 Rate Limiting and Progressive Account Lockout <span class="cp">Control Point A</span></h4>
   <p>
-    Two complementary controls resist brute-force and credential-stuffing attacks. <strong>IP-Level Rate Limiting</strong> via <code>slowapi</code> limits <code>/login</code> to 100 req/15 min, <code>/mfa/verify</code> to 10/min, and <code>/mfa/confirm</code> to 5/min (HTTP 429 on breach). <strong>Account Lockout</strong> locks the account database-side for 15 minutes after 5 consecutive failed password attempts — independent of IP rotation. A Fraud Rules Engine additionally flags transfers exceeding LKR 5,000 for administrator review, simulating AML threshold monitoring (FATF, 2012).
+    Two complementary controls resist brute-force and credential-stuffing attacks. <strong>IP-Level Rate Limiting</strong> via <code>slowapi</code> limits <code>/login</code> to 100 req/15 min, <code>/mfa/verify</code> to 10/min, and <code>/mfa/confirm</code> to 5/min (HTTP 429 on breach). <strong>Progressive Account Lockout</strong> applies a strict escalation policy database-side: after 5 consecutive failed password attempts, the account is temporarily locked for 15 minutes. If an attacker waits out the lock and fails a 6th consecutive attempt, the system triggers a <strong>Permanent Freeze</strong> (<code>is_frozen = TRUE</code>) and issues an out-of-band email alert. Only an administrator can unfreeze the account.
   </p>
 
   <h4>2c.3 Role-Based Access Control (RBAC) and Least Privilege <span class="cp">Control Points H &amp; E</span></h4>
@@ -789,7 +790,7 @@ return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")</pre>
       <text x="586" y="349.5" text-anchor="middle" font-size="8.5" fill="#075985">security/mail.py  →  SMTPS Port 465</text>
 
       <rect x="449" y="360" width="274" height="18" rx="3" fill="#e0f2fe"/>
-      <text x="586" y="372.5" text-anchor="middle" font-size="8.5" fill="#075985">middleware/ids_monitor.py  →  IDS / WAF sim.</text>
+      <text x="586" y="372.5" text-anchor="middle" font-size="8.5" fill="#075985">middleware/ids_monitor.py  →  Active WAF (Blocks)</text>
 
       <rect x="449" y="383" width="274" height="22" rx="3" fill="#e0f2fe"/>
       <text x="586" y="397.5" text-anchor="middle" font-size="8" fill="#075985">Keys: RSA-2048 (JWT), ECDSA P-256 (Tx), TLS RSA-4096</text>
