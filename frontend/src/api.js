@@ -98,4 +98,7 @@ export const getFrozenUsers = () =>
 export const unfreezeAccount = (userId) =>
   api.post(`/admin/users/${userId}/unfreeze`);
 
+export const getLockedUsers = () =>
+  api.get('/admin/users/locked');
+
 export default api;

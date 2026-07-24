@@ -232,7 +232,8 @@ def login(req: LoginRequest, request: Request):
             remaining = (user["locked_until"] - datetime.datetime.utcnow()).seconds // 60
             raise HTTPException(
                 status_code=423,
-                detail=f"Account locked. Try again in {remaining} minutes."
+                detail=f"Account locked. Try again in {remaining} minutes.",
+                headers={"X-Locked-Until": user["locked_until"].isoformat() + "Z"}
             )
 
         # Verify password
@@ -246,12 +247,16 @@ def login(req: LoginRequest, request: Request):
                 )
                 conn.commit()
                 _audit("ACCOUNT_LOCKED", user["id"], f"Locked after {failed} failed attempts", ip)
-                raise HTTPException(status_code=423, detail="Account locked due to too many failed attempts")
+                raise HTTPException(
+                    status_code=423, 
+                    detail=f"Account locked due to too many failed attempts. Try again in {LOCKOUT_MINUTES} minutes.",
+                    headers={"X-Locked-Until": locked_until.isoformat() + "Z"}
+                )
             else:
                 cursor.execute("UPDATE users SET failed_logins=%s WHERE id=%s", (failed, user["id"]))
                 conn.commit()
                 _audit("LOGIN_FAIL", user["id"], f"Failed attempt {failed}/{MAX_FAILED_LOGINS}", ip)
-                raise HTTPException(status_code=401, detail="Invalid credentials")
+                raise HTTPException(status_code=401, detail=f"Invalid credentials. {MAX_FAILED_LOGINS - failed} attempts remaining.")
 
         # Track IP and send alert if it's a new IP
         if user["last_ip"] and user["last_ip"] != ip:
@@ -657,12 +662,13 @@ def get_transactions(auth: dict = Depends(require_auth)):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT id FROM accounts WHERE user_id=%s", (user_id,))
+        cursor.execute("SELECT id, account_number FROM accounts WHERE user_id=%s", (user_id,))
         account = cursor.fetchone()
         if not account:
             raise HTTPException(status_code=404, detail="Account not found")
 
         account_id = account["id"]
+        account_number = account["account_number"]
         cursor.execute(
             """
             SELECT t.id, t.amount_cents, t.created_at, t.status,
@@ -682,7 +688,7 @@ def get_transactions(auth: dict = Depends(require_auth)):
             row["amount_display"] = f"LKR{row['amount_cents'] / 100:.2f}"
             row["created_at"] = str(row["created_at"])
             # Mark as credit or debit from user's perspective
-            row["type"] = "debit" if row["from_account"] == account_id else "credit"
+            row["type"] = "debit" if row["from_account"] == account_number else "credit"
         return {"transactions": rows}
     finally:
         cursor.close()
@@ -760,6 +766,35 @@ def admin_unfreeze_account(user_id: int, request: Request, auth: dict = Depends(
         conn.commit()
         _audit("ACCOUNT_UNFROZEN", admin_id, f"Admin unfroze account for user {user_id}", ip)
         return {"message": "Account unfrozen successfully."}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.get("/admin/users/locked")
+def get_locked_users(auth: dict = Depends(require_admin)):
+    """Admin fetches all locked users."""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Fetch users who are currently locked out
+        cursor.execute(
+            "SELECT id, email, full_name, failed_logins, locked_until, last_ip "
+            "FROM users WHERE locked_until IS NOT NULL"
+        )
+        users = cursor.fetchall()
+        locked = []
+        now = datetime.datetime.utcnow()
+        for u in users:
+            if u["locked_until"] > now:
+                # Calculate remaining time
+                remaining_mins = (u["locked_until"] - now).seconds // 60 + 1
+                u["locked_until"] = str(u["locked_until"])
+                u["remaining_mins"] = remaining_mins
+                locked.append(u)
+        
+        # Sort by most recently locked (highest remaining time)
+        locked.sort(key=lambda x: x["remaining_mins"], reverse=True)
+        return {"locked_users": locked}
     finally:
         cursor.close()
         conn.close()

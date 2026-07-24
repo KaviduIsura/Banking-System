@@ -775,7 +775,7 @@ export default function Dashboard() {
                         fontSize: "0.875rem",
                       }}
                     >
-                      {tx.type === "credit" ? "+" : "-"}${tx.amount_display}
+                      {tx.type === "credit" ? "+" : "-"} {tx.amount_display}
                     </div>
                   </div>
                 ))

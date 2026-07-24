@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../api';
 import { toast } from 'react-hot-toast';
@@ -8,7 +8,37 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!lockedUntil) {
+      setTimeLeft(null);
+      return;
+    }
+    
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const difference = lockedUntil.getTime() - now.getTime();
+      
+      if (difference <= 0) {
+        setLockedUntil(null);
+        setTimeLeft(null);
+        return;
+      }
+      
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+    
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    
+    return () => clearInterval(timer);
+  }, [lockedUntil]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,6 +62,13 @@ export default function Login() {
       if (err.message === 'Network Error') {
         toast.error('Network Error: Please open https://localhost:8443 in a new tab and accept the self-signed certificate.');
       } else {
+        if (err.response?.status === 423) {
+          const lockedHeader = err.response.headers['x-locked-until'];
+          if (lockedHeader) {
+            setLockedUntil(new Date(lockedHeader));
+          }
+        }
+        
         const detail = err.response?.data?.detail;
         if (Array.isArray(detail)) {
           toast.error(detail[0].msg);
@@ -98,14 +135,30 @@ export default function Login() {
           </div>
         </div>
         
-        <button 
-          type="submit" 
-          className="btn btn-primary" 
-          style={{ width: '100%', marginTop: '1rem' }}
-          disabled={loading}
-        >
-          {loading ? 'Authenticating...' : 'Continue →'}
-        </button>
+        {timeLeft ? (
+          <div style={{
+            width: '100%', 
+            marginTop: '1rem', 
+            padding: '1rem', 
+            backgroundColor: 'var(--danger-tint)', 
+            color: 'var(--danger)', 
+            borderRadius: '8px', 
+            textAlign: 'center',
+            fontWeight: 'bold',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            Account locked. Try again in {timeLeft}
+          </div>
+        ) : (
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ width: '100%', marginTop: '1rem' }}
+            disabled={loading}
+          >
+            {loading ? 'Authenticating...' : 'Continue →'}
+          </button>
+        )}
       </form>
       
       <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>

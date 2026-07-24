@@ -142,7 +142,7 @@ export default function History() {
                       </span>
                     </td>
                     <td style={{ padding: '1rem 1.5rem', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'right', color: tx.type === 'credit' ? 'var(--teal)' : 'var(--ink)' }}>
-                      {tx.type === 'credit' ? '+' : '-'}{tx.amount_display}
+                      {tx.type === 'credit' ? '+' : '-'} {tx.amount_display}
                     </td>
                     <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
                       <span style={{
