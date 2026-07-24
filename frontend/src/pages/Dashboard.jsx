@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [kycStatus, setKycStatus] = useState("pending");
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -21,19 +22,19 @@ export default function Dashboard() {
     }
   };
 
-  const handleFreeze = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to freeze your account? You will be logged out and cannot log back in until you contact support.",
-      )
-    ) {
-      try {
-        await freezeAccount();
-        toast.success("Account frozen successfully.");
-        logout();
-      } catch (err) {
-        toast.error("Failed to freeze account.");
-      }
+  const handleFreeze = () => {
+    setShowFreezeModal(true);
+  };
+
+  const executeFreeze = async () => {
+    try {
+      await freezeAccount();
+      toast.success("Account frozen successfully.");
+      logout();
+    } catch (err) {
+      toast.error("Failed to freeze account.");
+    } finally {
+      setShowFreezeModal(false);
     }
   };
 
@@ -798,6 +799,47 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      {showFreezeModal && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          animation: "fadeIn 0.2s ease-out"
+        }}>
+          <div className="card" style={{
+            maxWidth: "400px",
+            width: "90%",
+            padding: "2rem",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚠️</div>
+            <h3 style={{ marginBottom: "1rem", color: "var(--danger)" }}>Freeze Account</h3>
+            <p style={{ color: "var(--ink-soft)", marginBottom: "2rem", fontSize: "0.875rem" }}>
+              Are you sure you want to freeze your account? You will be logged out and cannot log back in until you contact support.
+            </p>
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => setShowFreezeModal(false)}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={executeFreeze}
+                style={{ flex: 1, backgroundColor: "var(--danger)", borderColor: "var(--danger)" }}
+              >
+                Confirm Freeze
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

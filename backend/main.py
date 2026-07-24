@@ -729,6 +729,40 @@ def freeze_account(request: Request, auth: dict = Depends(require_auth)):
         cursor.close()
         conn.close()
 
+# --- Admin: Unfreeze Account ------------------------------------------------
+
+@app.get("/admin/users/frozen")
+def get_frozen_users(auth: dict = Depends(require_admin)):
+    """Admin fetches all frozen users."""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id, email, full_name, created_at FROM users WHERE is_frozen=TRUE ORDER BY created_at DESC")
+        frozen = cursor.fetchall()
+        for f in frozen:
+            f["created_at"] = str(f["created_at"])
+        return {"frozen_users": frozen}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.post("/admin/users/{user_id}/unfreeze")
+def admin_unfreeze_account(user_id: int, request: Request, auth: dict = Depends(require_admin)):
+    """Admin unfreezes an account."""
+    admin_id = int(auth["sub"])
+    ip = request.client.host if request.client else ""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET is_frozen=FALSE WHERE id=%s AND is_frozen=TRUE", (user_id,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="User not found or not frozen.")
+        conn.commit()
+        _audit("ACCOUNT_UNFROZEN", admin_id, f"Admin unfroze account for user {user_id}", ip)
+        return {"message": "Account unfrozen successfully."}
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # ---------------------------------------------------------------------------

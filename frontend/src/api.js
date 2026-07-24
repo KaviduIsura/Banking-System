@@ -92,4 +92,10 @@ export const approveTransaction = (txId) =>
 export const rejectTransaction = (txId) =>
   api.post(`/admin/transactions/${txId}/reject`);
 
+export const getFrozenUsers = () =>
+  api.get('/admin/users/frozen');
+
+export const unfreezeAccount = (userId) =>
+  api.post(`/admin/users/${userId}/unfreeze`);
+
 export default api;

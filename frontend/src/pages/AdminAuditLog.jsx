@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import {
   getAuditLog,
   getPendingTransactions,
   approveTransaction,
   rejectTransaction,
+  getFrozenUsers,
+  unfreezeAccount,
 } from "../api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -13,6 +14,7 @@ export default function AdminAuditLog() {
   const { user } = useAuth();
   const [logs, setLogs] = useState([]);
   const [pending, setPending] = useState([]);
+  const [frozen, setFrozen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("audit");
 
@@ -23,12 +25,14 @@ export default function AdminAuditLog() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [auditRes, pendingRes] = await Promise.all([
+        const [auditRes, pendingRes, frozenRes] = await Promise.all([
           getAuditLog(),
           getPendingTransactions(),
+          getFrozenUsers(),
         ]);
         setLogs(auditRes.data.audit_log || []);
         setPending(pendingRes.data.pending_transactions || []);
+        setFrozen(frozenRes.data.frozen_users || []);
       } catch (err) {
         console.error("Failed to fetch admin data:", err);
       } finally {
@@ -117,6 +121,16 @@ export default function AdminAuditLog() {
     }
   };
 
+  const handleUnfreeze = async (userId) => {
+    try {
+      await unfreezeAccount(userId);
+      toast.success("Account unfrozen successfully.");
+      setFrozen(frozen.filter((f) => f.id !== userId));
+    } catch (err) {
+      toast.error("Failed to unfreeze account.");
+    }
+  };
+
   return (
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       <div
@@ -152,6 +166,26 @@ export default function AdminAuditLog() {
                 }}
               >
                 {pending.length}
+              </span>
+            )}
+          </button>
+          <button
+            className={`btn ${activeTab === "frozen" ? "btn-primary" : "btn-ghost"}`}
+            onClick={() => setActiveTab("frozen")}
+          >
+            Frozen Accounts{" "}
+            {frozen.length > 0 && (
+              <span
+                style={{
+                  background: "var(--danger)",
+                  color: "white",
+                  padding: "0.1rem 0.4rem",
+                  borderRadius: "50%",
+                  fontSize: "0.75rem",
+                  marginLeft: "0.5rem",
+                }}
+              >
+                {frozen.length}
               </span>
             )}
           </button>
@@ -233,7 +267,7 @@ export default function AdminAuditLog() {
       </div>
 
       {/* Content based on tab */}
-      {activeTab === "audit" ? (
+      {activeTab === "audit" && (
         <div className="card" style={{ padding: 0, overflowX: "auto" }}>
           <table
             style={{
@@ -379,7 +413,8 @@ export default function AdminAuditLog() {
             </tbody>
           </table>
         </div>
-      ) : (
+      )}
+      {activeTab === "pending" && (
         <div className="card" style={{ padding: 0, overflowX: "auto" }}>
           <table
             style={{
@@ -541,6 +576,147 @@ export default function AdminAuditLog() {
                           Reject
                         </button>
                       </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {activeTab === "frozen" && (
+        <div className="card" style={{ padding: 0, overflowX: "auto" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              textAlign: "left",
+            }}
+          >
+            <thead style={{ backgroundColor: "#F9FAFB" }}>
+              <tr>
+                <th
+                  style={{
+                    padding: "1rem 1.5rem",
+                    color: "var(--ink-soft)",
+                    fontSize: "0.875rem",
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  Time
+                </th>
+                <th
+                  style={{
+                    padding: "1rem 1.5rem",
+                    color: "var(--ink-soft)",
+                    fontSize: "0.875rem",
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  User ID
+                </th>
+                <th
+                  style={{
+                    padding: "1rem 1.5rem",
+                    color: "var(--ink-soft)",
+                    fontSize: "0.875rem",
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  Email
+                </th>
+                <th
+                  style={{
+                    padding: "1rem 1.5rem",
+                    color: "var(--ink-soft)",
+                    fontSize: "0.875rem",
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  Full Name
+                </th>
+                <th
+                  style={{
+                    padding: "1rem 1.5rem",
+                    color: "var(--ink-soft)",
+                    fontSize: "0.875rem",
+                    borderBottom: "1px solid #E5E7EB",
+                    textAlign: "right",
+                  }}
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" style={{ padding: "3rem", textAlign: "center" }}>
+                    Loading records...
+                  </td>
+                </tr>
+              ) : frozen.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ padding: "3rem", textAlign: "center" }}>
+                    No frozen accounts found.
+                  </td>
+                </tr>
+              ) : (
+                frozen.map((f, i) => (
+                  <tr
+                    key={f.id}
+                    style={{
+                      borderBottom: i < frozen.length - 1 ? "1px solid #E5E7EB" : "none",
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: "1rem 1.5rem",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.75rem",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatDate(f.created_at)}
+                    </td>
+                    <td
+                      style={{
+                        padding: "1rem 1.5rem",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      ID: {f.id}
+                    </td>
+                    <td
+                      style={{
+                        padding: "1rem 1.5rem",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {f.email}
+                    </td>
+                    <td
+                      style={{
+                        padding: "1rem 1.5rem",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {f.full_name}
+                    </td>
+                    <td style={{ padding: "1rem 1.5rem", textAlign: "right" }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          padding: "0.4rem 0.8rem",
+                          fontSize: "0.8rem",
+                          backgroundColor: "var(--teal)",
+                          borderColor: "var(--teal)",
+                        }}
+                        onClick={() => handleUnfreeze(f.id)}
+                      >
+                        Unfreeze
+                      </button>
                     </td>
                   </tr>
                 ))
