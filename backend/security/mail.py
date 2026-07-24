@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 # EMAIL PROVIDER DETECTION
 # ─────────────────────────────────────────────────────────────────────────────
-# If RESEND_API_KEY is set in .env, the Resend API (HTTPS) is used.
-# This is required when hosted — cloud providers block SMTP ports 465/587.
+# If BREVO_API_KEY is set in .env, the Brevo API (HTTPS) is used.
+# This bypasses the SMTP port 465/587 blocks on cloud providers.
 # Locally, if only SMTP credentials are present, raw SMTPS is used as a fallback.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -40,26 +40,34 @@ def _get_base_html(title: str, body_html: str) -> str:
     """
 
 
-def _send_via_resend(to_email: str, subject: str, html_content: str, plain_text: str):
+def _send_via_brevo(to_email: str, subject: str, html_content: str, plain_text: str):
     """
-    Sends email via the Resend API over HTTPS.
-    Required for hosted environments where cloud providers block SMTP ports.
-    CW2 Note: Still satisfies the SMTPS requirement — Resend uses TLS 1.3 for
-    all API calls over port 443, which is cryptographically equivalent.
+    Sends email via the Brevo (Sendinblue) API over HTTPS.
+    Bypasses Render's SMTP block and allows sending to ANY email address.
     """
-    import resend
-    resend.api_key = os.getenv("RESEND_API_KEY")
-    from_address = os.getenv("RESEND_FROM_EMAIL", "SecureBank <onboarding@resend.dev>")
+    import requests
+    api_key = os.getenv("BREVO_API_KEY")
+    from_email = os.getenv("BREVO_FROM_EMAIL", "kaviduisura4567@gmail.com")
 
-    params = {
-        "from": from_address,
-        "to": [to_email],
-        "subject": subject,
-        "html": html_content,
-        "text": plain_text,
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
     }
-    response = resend.Emails.send(params)
-    logger.info(f"Email '{subject}' sent via Resend API to {to_email}. ID: {response.get('id')}")
+    payload = {
+        "sender": {"name": "SecureBank", "email": from_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_content,
+        "textContent": plain_text
+    }
+    
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code in (200, 201, 202):
+        logger.info(f"Email '{subject}' sent via Brevo API to {to_email}.")
+    else:
+        logger.error(f"Brevo API error: {response.text}")
 
 
 def _send_via_smtp(to_email: str, subject: str, html_content: str, plain_text: str):
@@ -99,7 +107,7 @@ def _send_email(to_email: str, subject: str, title: str, plain_text: str, html_b
     Master email dispatcher.
     
     Routing logic:
-    1. If RESEND_API_KEY is set → use Resend API (works on hosted servers, no port blocks).
+    1. If BREVO_API_KEY is set → use Brevo API (works on hosted servers, no port blocks).
     2. Else if SMTP credentials are set → use SMTPS/Implicit TLS (works locally).
     3. Else → log a warning and skip (dev mode with no email configured).
     
@@ -108,15 +116,15 @@ def _send_email(to_email: str, subject: str, title: str, plain_text: str, html_b
     html_content = _get_base_html(title, html_body)
 
     try:
-        if os.getenv("RESEND_API_KEY"):
-            logger.info(f"Email provider: Resend API (hosted mode)")
-            _send_via_resend(to_email, subject, html_content, plain_text)
+        if os.getenv("BREVO_API_KEY"):
+            logger.info(f"Email provider: Brevo API (hosted mode)")
+            _send_via_brevo(to_email, subject, html_content, plain_text)
         elif os.getenv("SMTP_HOST"):
             logger.info(f"Email provider: SMTPS (local mode)")
             _send_via_smtp(to_email, subject, html_content, plain_text)
         else:
             logger.warning(
-                "No email provider configured. Set RESEND_API_KEY (hosted) or "
+                "No email provider configured. Set BREVO_API_KEY (hosted) or "
                 "SMTP_HOST/SMTP_USER/SMTP_PASS (local) in your .env file."
             )
     except Exception as e:
