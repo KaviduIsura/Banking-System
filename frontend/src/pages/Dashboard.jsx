@@ -14,6 +14,13 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+  const handleCopy = (text, label) => {
+    if (text && text !== "N/A") {
+      navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard`);
+    }
+  };
+
   const handleFreeze = async () => {
     if (
       window.confirm(
@@ -394,9 +401,21 @@ export default function Dashboard() {
                     fontWeight: 600,
                     fontSize: "0.875rem",
                     marginTop: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
-                  {profile?.full_name || "N/A"}
+                  <span>{profile?.full_name || "N/A"}</span>
+                  {profile?.full_name && (
+                    <button
+                      onClick={() => handleCopy(profile.full_name, "Full Name")}
+                      style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+                      title="Copy Full Name"
+                    >
+                      📋
+                    </button>
+                  )}
                 </div>
               </div>
               <div>
@@ -415,9 +434,21 @@ export default function Dashboard() {
                     fontWeight: 600,
                     fontSize: "0.875rem",
                     marginTop: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
-                  {profile?.date_of_birth || "N/A"}
+                  <span>{profile?.date_of_birth || "N/A"}</span>
+                  {profile?.date_of_birth && (
+                    <button
+                      onClick={() => handleCopy(profile.date_of_birth, "Date of Birth")}
+                      style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+                      title="Copy Date of Birth"
+                    >
+                      📋
+                    </button>
+                  )}
                 </div>
               </div>
               <div>
@@ -437,9 +468,21 @@ export default function Dashboard() {
                     fontFamily: "var(--font-mono)",
                     fontSize: "0.875rem",
                     marginTop: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
-                  {profile?.phone_number || "N/A"}
+                  <span>{profile?.phone_number || "N/A"}</span>
+                  {profile?.phone_number && (
+                    <button
+                      onClick={() => handleCopy(profile.phone_number, "Phone")}
+                      style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+                      title="Copy Phone"
+                    >
+                      📋
+                    </button>
+                  )}
                 </div>
               </div>
               <div>
@@ -458,9 +501,55 @@ export default function Dashboard() {
                     fontWeight: 600,
                     fontSize: "0.875rem",
                     marginTop: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
-                  {profile?.address || "N/A"}
+                  <span>{profile?.address || "N/A"}</span>
+                  {profile?.address && (
+                    <button
+                      onClick={() => handleCopy(profile.address, "Address")}
+                      style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+                      title="Copy Address"
+                    >
+                      📋
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span
+                  style={{
+                    color: "var(--ink-soft)",
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Account Number
+                </span>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.875rem",
+                    marginTop: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span>{accountNumber || "N/A"}</span>
+                  {accountNumber && (
+                    <button
+                      onClick={() => handleCopy(accountNumber, "Account Number")}
+                      style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+                      title="Copy Account Number"
+                    >
+                      📋
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -521,14 +610,38 @@ export default function Dashboard() {
 
             <div
               style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "1.125rem",
-                letterSpacing: "0.15em",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
                 marginBottom: "2rem",
-                color: "rgba(255,255,255,0.9)",
               }}
             >
-              •••• •••• •••• {accountNumber.slice(-4) || "1234"}
+              <div
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "1.125rem",
+                  letterSpacing: "0.15em",
+                  color: "rgba(255,255,255,0.9)",
+                }}
+              >
+                •••• •••• •••• {accountNumber ? accountNumber.slice(-4) : "1234"}
+              </div>
+              {accountNumber && (
+                <button
+                  onClick={() => handleCopy(accountNumber, "Account Number")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "rgba(255,255,255,0.7)",
+                    padding: 0,
+                    fontSize: "1.125rem",
+                  }}
+                  title="Copy Full Account Number"
+                >
+                  📋
+                </button>
+              )}
             </div>
 
             <div
