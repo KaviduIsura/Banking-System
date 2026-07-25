@@ -39,7 +39,7 @@ export default function DesignSystemDemo() {
 
   return (
     <div className="demo-container">
-      <h2 style={{ marginBottom: "2rem" }}>Solstice Bank Design System</h2>
+      <h2 style={{ marginBottom: "2rem" }}>Secure Bank Bank Design System</h2>
 
       <section style={{ marginBottom: "3rem" }}>
         <h3

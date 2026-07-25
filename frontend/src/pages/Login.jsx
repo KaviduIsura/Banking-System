@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../api';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { login } from "../api";
+import { toast } from "react-hot-toast";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lockedUntil, setLockedUntil] = useState(null);
@@ -17,34 +17,34 @@ export default function Login() {
       setTimeLeft(null);
       return;
     }
-    
+
     const calculateTimeLeft = () => {
       const now = new Date();
       const difference = lockedUntil.getTime() - now.getTime();
-      
+
       if (difference <= 0) {
         setLockedUntil(null);
         setTimeLeft(null);
         return;
       }
-      
+
       const minutes = Math.floor((difference / 1000 / 60) % 60);
       const seconds = Math.floor((difference / 1000) % 60);
-      
-      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+
+      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, "0")}`);
     };
-    
+
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
-    
+
     return () => clearInterval(timer);
   }, [lockedUntil]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
-      toast.error('Email and password are required');
+      toast.error("Email and password are required");
       return;
     }
 
@@ -52,28 +52,30 @@ export default function Login() {
     try {
       const res = await login(email, password);
       const { mfa_enabled, user_id } = res.data;
-      
+
       if (mfa_enabled) {
-        navigate('/mfa-verify', { state: { userId: user_id, email } });
+        navigate("/mfa-verify", { state: { userId: user_id, email } });
       } else {
-        navigate('/mfa-setup', { state: { userId: user_id, email, password } });
+        navigate("/mfa-setup", { state: { userId: user_id, email, password } });
       }
     } catch (err) {
-      if (err.message === 'Network Error') {
-        toast.error('Network Error: Please open https://localhost:8443 in a new tab and accept the self-signed certificate.');
+      if (err.message === "Network Error") {
+        toast.error(
+          "Network Error: Please open https://localhost:8443 in a new tab and accept the self-signed certificate.",
+        );
       } else {
         if (err.response?.status === 423) {
-          const lockedHeader = err.response.headers['x-locked-until'];
+          const lockedHeader = err.response.headers["x-locked-until"];
           if (lockedHeader) {
             setLockedUntil(new Date(lockedHeader));
           }
         }
-        
+
         const detail = err.response?.data?.detail;
         if (Array.isArray(detail)) {
           toast.error(detail[0].msg);
         } else {
-          toast.error(detail || 'Login failed. Please check your credentials.');
+          toast.error(detail || "Login failed. Please check your credentials.");
         }
       }
     } finally {
@@ -83,11 +85,15 @@ export default function Login() {
 
   return (
     <div>
-      <h3 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Sign in to Solstice</h3>
-      
+      <h3 style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+        Sign in to Secure Bank
+      </h3>
+
       <form onSubmit={handleLogin}>
         <div className="form-group">
-          <label className="form-label" htmlFor="email">Email</label>
+          <label className="form-label" htmlFor="email">
+            Email
+          </label>
           <input
             id="email"
             type="email"
@@ -98,15 +104,26 @@ export default function Login() {
             autoComplete="email"
           />
         </div>
-        
+
         <div className="form-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <label className="form-label" htmlFor="password">Password</label>
-            <Link to="/forgot-password" style={{ fontSize: '0.75rem', fontWeight: 500 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            }}
+          >
+            <label className="form-label" htmlFor="password">
+              Password
+            </label>
+            <Link
+              to="/forgot-password"
+              style={{ fontSize: "0.75rem", fontWeight: 500 }}
+            >
               Forgot password?
             </Link>
           </div>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: "relative" }}>
             <input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -120,52 +137,80 @@ export default function Login() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               style={{
-                position: 'absolute',
-                right: '1rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--ink-soft)'
+                position: "absolute",
+                right: "1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--ink-soft)",
               }}
             >
               {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
               )}
             </button>
           </div>
         </div>
-        
+
         {timeLeft ? (
-          <div style={{
-            width: '100%', 
-            marginTop: '1rem', 
-            padding: '1rem', 
-            backgroundColor: 'var(--danger-tint)', 
-            color: 'var(--danger)', 
-            borderRadius: '8px', 
-            textAlign: 'center',
-            fontWeight: 'bold',
-            animation: 'fadeIn 0.2s ease-out'
-          }}>
+          <div
+            style={{
+              width: "100%",
+              marginTop: "1rem",
+              padding: "1rem",
+              backgroundColor: "var(--danger-tint)",
+              color: "var(--danger)",
+              borderRadius: "8px",
+              textAlign: "center",
+              fontWeight: "bold",
+              animation: "fadeIn 0.2s ease-out",
+            }}
+          >
             Account locked. Try again in {timeLeft}
           </div>
         ) : (
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', marginTop: '1rem' }}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%", marginTop: "1rem" }}
             disabled={loading}
           >
-            {loading ? 'Authenticating...' : 'Continue →'}
+            {loading ? "Authenticating..." : "Continue →"}
           </button>
         )}
       </form>
-      
-      <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>
+
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "1.5rem",
+          fontSize: "0.875rem",
+        }}
+      >
         Don't have an account? <Link to="/register">Create one</Link>
       </div>
     </div>
