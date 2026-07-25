@@ -181,13 +181,14 @@ def send_account_frozen_email(to_email: str):
 
 def send_welcome_email(to_email: str, full_name: str):
     """Sends a welcome email to a newly registered user."""
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
     first_name = full_name.split()[0] if full_name else "Customer"
     plain_text = f"Hello {first_name},\n\nWelcome to SecureBank! Your account has been successfully created.\n\nPlease log in to set up your multi-factor authentication (MFA)."
     html_body = f"""
         <p>Hello <strong>{first_name}</strong>,</p>
         <p>Welcome to SecureBank! Your core banking account has been successfully created and provisioned.</p>
         <p>To ensure maximum security for your funds, your next step is to log in and configure your Multi-Factor Authentication (MFA) using an authenticator app.</p>
-        <a href="https://localhost:5173/login" style="display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 15px;">Log In to SecureBank</a>
+        <a href="{frontend_url}/login" style="display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 15px;">Log In to SecureBank</a>
     """
     _send_email(to_email, "Welcome to SecureBank", "Welcome to SecureBank", plain_text, html_body)
 

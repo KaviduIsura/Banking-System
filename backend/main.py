@@ -11,6 +11,7 @@ Control points implemented:
   Audit — audit_log table populated on every significant event
 """
 
+import os
 import datetime
 import random
 import string
@@ -322,7 +323,8 @@ def forgot_password(req: ForgotPasswordRequest, request: Request):
         if user:
             # Generate a stateless JWT reset token valid for 15 minutes
             reset_token = issue_reset_jwt(req.email)
-            reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+            reset_link = f"{frontend_url}/reset-password?token={reset_token}"
             
             # Send the email
             send_password_reset_email(req.email, reset_link)
