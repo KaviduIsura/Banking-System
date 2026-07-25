@@ -15,7 +15,7 @@ import os
 import datetime
 import random
 import string
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.ids_monitor import IDSMonitorMiddleware
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -624,7 +624,7 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
     try:
         # Get sender's account and calculate balance from ledger
         cursor.execute(
-            "SELECT id FROM accounts WHERE user_id=%s",
+            "SELECT id, account_number FROM accounts WHERE user_id=%s",
             (user_id,)
         )
         from_account = cursor.fetchone()
@@ -726,7 +726,16 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
         cursor.execute("SELECT email FROM users WHERE id=%s", (user_id,))
         user_row = cursor.fetchone()
         if user_row and user_row.get("email"):
-            send_transfer_confirmation(user_row["email"], amount_display, req.to_account_number)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            send_transfer_confirmation(
+                to_email=user_row["email"],
+                amount=amount_display,
+                from_account=from_account["account_number"],
+                to_account=req.to_account_number,
+                tx_id=tx_id,
+                date=current_time,
+                status="completed"
+            )
 
         return {
             "message": "Transfer successful",
@@ -740,6 +749,89 @@ def transfer(req: TransferRequest, request: Request, auth: dict = Depends(requir
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.get("/transactions/{transaction_id}/receipt")
+def get_transaction_receipt(transaction_id: int, auth: dict = Depends(require_auth)):
+    """Generates a downloadable PDF receipt for a transaction."""
+    user_id = int(auth["sub"])
+    
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Verify the user owns the transaction (either sender or receiver)
+        cursor.execute("""
+            SELECT t.id, t.amount_cents, t.created_at, t.status, t.signature,
+                   fa.account_number as from_account,
+                   ta.account_number as to_account,
+                   fa.user_id as from_user_id,
+                   ta.user_id as to_user_id
+            FROM transactions t
+            JOIN accounts fa ON t.from_account = fa.id
+            JOIN accounts ta ON t.to_account = ta.id
+            WHERE t.id = %s
+        """, (transaction_id,))
+        tx = cursor.fetchone()
+        
+        if not tx:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+            
+        if tx["from_user_id"] != user_id and tx["to_user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this receipt")
+            
+        from fpdf import FPDF
+        
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # Header
+        pdf.set_font("Helvetica", style="B", size=24)
+        pdf.set_text_color(16, 185, 129) # Emerald color
+        pdf.cell(0, 15, "SecureBank", ln=True, align="C")
+        
+        pdf.set_font("Helvetica", style="B", size=16)
+        pdf.set_text_color(15, 23, 42) # Slate color
+        pdf.cell(0, 10, "Transaction Receipt", ln=True, align="C")
+        pdf.ln(10)
+        
+        # Details
+        pdf.set_font("Helvetica", size=12)
+        pdf.set_text_color(51, 65, 85)
+        
+        amount_str = f"LKR {tx['amount_cents'] / 100:.2f}"
+        
+        details = [
+            ("Transaction ID:", str(tx["id"])),
+            ("Date & Time:", str(tx["created_at"])),
+            ("Status:", tx["status"].upper()),
+            ("Amount:", amount_str),
+            ("From Account:", tx["from_account"]),
+            ("To Account:", tx["to_account"]),
+            ("Digital Signature:", tx["signature"][:20] + "...")
+        ]
+        
+        for label, value in details:
+            pdf.set_font("Helvetica", style="B", size=12)
+            pdf.cell(50, 10, label, border=0)
+            pdf.set_font("Helvetica", size=12)
+            pdf.cell(0, 10, value, border=0, ln=True)
+            
+        pdf.ln(20)
+        pdf.set_font("Helvetica", style="I", size=10)
+        pdf.set_text_color(100, 116, 139)
+        pdf.cell(0, 10, "Thank you for using SecureBank. This is a computer-generated document.", align="C")
+        
+        pdf_bytes = pdf.output()
+        if isinstance(pdf_bytes, str):
+            pdf_bytes = pdf_bytes.encode('latin1')
+        
+        return Response(content=pdf_bytes, media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename=receipt_{transaction_id}.pdf"
+        })
+        
     finally:
         cursor.close()
         conn.close()

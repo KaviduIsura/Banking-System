@@ -9,7 +9,7 @@ def test_send_transfer_confirmation_success(mock_smtp):
     # The context manager __enter__ should return the mock server
     mock_smtp.return_value.__enter__.return_value = mock_server
     
-    send_transfer_confirmation("recipient@test.com", "LKR50.00", "SB1234567890")
+    send_transfer_confirmation("recipient@test.com", "LKR50.00", "ACC-123", "SB1234567890", 101, "2024-01-01 10:00:00", "completed")
     
     # Assert connection was made
     mock_smtp.assert_called_once_with("smtp.test.com", 465)
@@ -31,6 +31,6 @@ def test_send_transfer_confirmation_exception_handled(mock_smtp):
     mock_smtp.side_effect = Exception("Connection refused")
     
     # This should not raise an exception
-    send_transfer_confirmation("recipient@test.com", "LKR50.00", "SB1234567890")
+    send_transfer_confirmation("recipient@test.com", "LKR50.00", "ACC-123", "SB1234567890", 101, "2024-01-01 10:00:00", "completed")
     
     mock_smtp.assert_called_once_with("smtp.test.com", 465)

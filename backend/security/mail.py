@@ -137,18 +137,22 @@ def _send_email(to_email: str, subject: str, title: str, plain_text: str, html_b
 # PUBLIC EMAIL FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def send_transfer_confirmation(to_email: str, amount: str, to_account: str):
-    """Sends a transfer confirmation email."""
-    plain_text = f"Your transfer of {amount} to account {to_account} was successful."
+def send_transfer_confirmation(to_email: str, amount: str, from_account: str, to_account: str, tx_id: int, date: str, status: str):
+    """Sends a detailed transfer confirmation email."""
+    plain_text = f"Your transfer of {amount} to account {to_account} (TX ID: {tx_id}) was {status} on {date}."
     html_body = f"""
-        <p>Your recent fund transfer has been processed successfully.</p>
+        <p>Your recent fund transfer has been processed.</p>
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin: 20px 0;">
             <p style="margin: 0 0 10px 0;"><strong>Amount:</strong> <span style="color: #10b981; font-weight: bold; font-size: 18px;">{amount}</span></p>
+            <p style="margin: 0;"><strong>Status:</strong> {status.upper()}</p>
+            <p style="margin: 0;"><strong>Transaction ID:</strong> {tx_id}</p>
+            <p style="margin: 0;"><strong>Date:</strong> {date}</p>
+            <p style="margin: 0;"><strong>From Account:</strong> {from_account}</p>
             <p style="margin: 0;"><strong>Recipient Account:</strong> {to_account}</p>
         </div>
         <p>Thank you for banking with us.</p>
     """
-    _send_email(to_email, "Transfer Confirmation", "Transfer Successful", plain_text, html_body)
+    _send_email(to_email, f"Transfer {status.capitalize()} - {tx_id}", "Transaction Details", plain_text, html_body)
 
 
 def send_security_alert(to_email: str, ip_address: str):
