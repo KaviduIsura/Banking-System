@@ -181,7 +181,7 @@ def send_account_frozen_email(to_email: str):
 
 def send_welcome_email(to_email: str, full_name: str):
     """Sends a welcome email to a newly registered user."""
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    frontend_url = os.getenv("FRONTEND_URL", "https://banking-system-jet-delta.vercel.app")
     first_name = full_name.split()[0] if full_name else "Customer"
     plain_text = f"Hello {first_name},\n\nWelcome to SecureBank! Your account has been successfully created.\n\nPlease log in to set up your multi-factor authentication (MFA)."
     html_body = f"""

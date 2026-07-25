@@ -323,7 +323,7 @@ def forgot_password(req: ForgotPasswordRequest, request: Request):
         if user:
             # Generate a stateless JWT reset token valid for 15 minutes
             reset_token = issue_reset_jwt(req.email)
-            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+            frontend_url = os.getenv("FRONTEND_URL", "https://banking-system-jet-delta.vercel.app")
             reset_link = f"{frontend_url}/reset-password?token={reset_token}"
             
             # Send the email
